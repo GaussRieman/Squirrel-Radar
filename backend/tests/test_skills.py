@@ -68,3 +68,19 @@ def test_data_explain_output_contract():
     assert "当前值" in content
     assert "解读" in content
     assert "风险提示" in content
+
+
+def test_risk_watch_skill_frontmatter_and_routing():
+    content = _load_skill("risk-watch")
+    assert "name: risk-watch" in content
+    assert "Do NOT" in content
+    assert "get_cycle_snapshot" in content
+    assert "get_matched_rules" in content
+
+
+def test_risk_watch_output_contract():
+    content = _load_skill("risk-watch")
+    assert "当前主要风险" in content
+    assert "下月重点观察" in content
+    assert "风险等级汇总" in content
+    assert "继续观察" in content

@@ -1,34 +1,33 @@
 ---
 name: risk-watch
-description: 聚焦当前主要风险和下月重点观察指标。当用户询问风险、下个月关注什么、需要警惕什么时使用。
+description: Surface current risks and next-month watch items. Use this skill when the user asks what risks exist now, what to monitor next month, what warning signs are present, or what could change the cycle judgment. Do NOT use this skill for historical comparisons or indicator definitions.
 ---
 
-# 风险观察技能
+# Risk Watch
 
-## 触发条件
-用户询问当前风险、下月重点观察、预警信号、需要关注的指标。
+## What this skill does
 
-## 工作流
+Scans matched rules and weak-status indicators to produce a concise risk register and a forward-looking watch list with falsifiable conditions.
 
-1. 调用 `get_cycle_snapshot(month)` 读取 risks 和 watch_tasks
-2. 调用 `get_matched_rules(month)` 读取命中规则的 risk 字段
-3. 调用 `get_indicators(month)` 扫描 status=weak 的指标作为额外风险信号
-4. 综合形成风险清单和观察任务
+## Workflow
 
-## 输出格式
+1. `→ get_cycle_snapshot(month)` — read `risks` and `watch_tasks` arrays from the snapshot
+2. `→ get_matched_rules(month)` — read the `risk` field from each matched rule's evidence
+3. `→ get_indicators(month)` — identify any indicators with `status=weak` not already covered by a matched rule
+4. Deduplicate across all three sources. Rank by severity: `critical` first, then `warning`, then `caution`
+
+## Output contract
 
 ```
-**当前主要风险：**
-1. <风险描述>（来源：规则 <name> / 指标 <name>）
+**当前主要风险**
+1. <risk description>（来源：规则「<rule name>」/ 指标「<indicator name>」）
 2. ...
 
-**下月重点观察指标：**
-1. <指标名>：当前值 <value>，观察 <什么变化> 将改变判断为 <新状态>
+**下月重点观察**
+1. <indicator name>：当前 <value><unit>，若 <specific measurable condition> 则判断将转为 <new state>
 2. ...
 
-**风险等级**：基于命中规则的 severity 字段（warning / critical / positive）
+**风险等级汇总**：critical <n> 条 | warning <n> 条 | caution <n> 条
 ```
 
-## 约束
-- 不做具体资产价格预测
-- 观察任务必须说明"什么变化会改变判断"，不能只写"继续观察"
+Watch items must specify a falsifiable condition. "继续观察" is not an acceptable watch item — every item must say what specific change would alter the current judgment.
