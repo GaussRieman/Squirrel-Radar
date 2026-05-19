@@ -53,3 +53,18 @@ def test_rule_diagnosis_output_contract():
     assert "条件核查" in content
     assert "结论" in content
     assert "风险含义" in content
+
+
+def test_data_explain_skill_frontmatter_and_routing():
+    content = _load_skill("data-explain")
+    assert "name: data-explain" in content
+    assert "Do NOT" in content
+    assert "get_indicator_detail" in content
+
+
+def test_data_explain_output_contract():
+    content = _load_skill("data-explain")
+    assert "定义" in content
+    assert "当前值" in content
+    assert "解读" in content
+    assert "风险提示" in content

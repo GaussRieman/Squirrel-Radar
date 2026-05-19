@@ -1,37 +1,38 @@
 ---
 name: data-explain
-description: 解释宏观指标的字段口径、定义和当前数值含义。当用户询问某个指标是什么意思、同比/环比/分位数的含义时使用。
+description: Explain what a macro indicator means and what its current value signals. Use this skill when the user asks what an indicator is, what YoY/MoM/percentile/trend means, or what a specific indicator's current reading tells us about the economy. Do NOT use this skill when the user asks about rules or wants an overall monthly state summary.
 ---
 
-# 数据解释技能
+# Data Explainer
 
-## 触发条件
-用户询问指标含义、字段口径（同比/环比/分位/趋势）、某指标当前值说明了什么。
+## What this skill does
 
-## 工作流
+Answers "what does this number mean?" — pulls the indicator's definition, interpretation, and risk note from the database, then contextualizes the current value in plain language.
 
-1. 调用 `get_indicator_detail(code, month)` 读取指标完整定义、interpretation 和 risk_note
-2. 若用户未指定指标代码，先调用 `get_indicators(month)` 列出所有指标供定位
-3. 解释字段口径，再结合当前数值说明含义
+## Workflow
 
-## 字段口径说明（内置知识，无需调工具）
+1. Identify the indicator the user is asking about — by name or code from their message
+2. If the indicator code is unknown, `→ get_indicators(month)` to scan names and locate the correct code
+3. `→ get_indicator_detail(code, month)` — definition, interpretation, risk_note, and all current values
+4. Explain: concept first, then current value in context of the interpretation field
 
-- **yoy（同比）**：与去年同期相比的变化率，反映中长期趋势
-- **mom（环比）**：与上月相比的变化率，反映短期动能
-- **trend_3m**：近 3 个月均值，平滑短期波动
-- **percentile_24m**：当前值在过去 24 个月中的百分位，反映历史相对位置（> 70 偏高，< 30 偏低）
-- **status**：strong / neutral / weak，由规则引擎根据阈值判定
+## Field reference (built-in knowledge — no tool call needed)
 
-## 输出格式
+- **yoy**: year-on-year change rate — reflects medium-term trend direction
+- **mom**: month-on-month change rate — reflects short-term momentum
+- **trend_3m**: 3-month rolling average — smooths single-month noise
+- **percentile_24m**: where the current value sits within the past 24 months (>70 = historically high, <30 = historically low)
+- **status**: `strong` / `neutral` / `weak` — assigned by the rule engine against fixed thresholds
+
+## Output contract
 
 ```
-**指标名称**：<name>（代码：<code>）
-**定义**：<definition>
-**当前值**：<value><unit>，同比 <yoy>，环比 <mom>，24 月分位 <percentile_24m>%
-**状态**：<status>
-**解读**：<interpretation 中的内容，结合当前数值具体化>
-**风险提示**：<risk_note>
-```
+**<indicator name>**（`<code>`）
 
-## 约束
-- 先解释概念，再引用当前数据，不能只列数字
+定义：<definition field>
+当前值：<value><unit> | 同比 <yoy> | 环比 <mom> | 24月分位 <percentile_24m>%
+状态：<status>
+
+解读：<interpretation field, contextualized to the actual current value — 2–3 sentences>
+风险提示：<risk_note field>
+```
