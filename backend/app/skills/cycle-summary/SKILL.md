@@ -1,54 +1,51 @@
 ---
 name: cycle-summary
-description: 综合六大模块、命中规则和关键指标，生成宏观周期状态判断。当用户问本月状态、宏观环境、整体判断时使用。
+description: Generate a full macro cycle state summary for a given month. Use this skill when the user asks about the overall economic state, the headline judgment, what is happening this month, or requests a comprehensive breakdown of all six modules. Do NOT use this skill for questions about a single indicator, a single rule, or when the user only wants to navigate to a month.
 ---
 
-# 周期状态综合技能
+# Cycle Summary
 
-## 触发条件
-用户询问本月宏观周期状态、整体判断、一句话摘要或综合解读。
+## What this skill does
 
-## 工作流
+Synthesizes the six-module state, matched rules, and key indicators into a structured macro cycle interpretation. This is the most comprehensive skill — invoke it only when the user wants the full picture.
 
-1. 调用 `get_available_months` 确认可用月份范围
-2. 调用 `get_cycle_snapshot(month)` 读取 headline、六模块状态、风险和观察任务
-3. 调用 `get_matched_rules(month)` 读取命中规则作为判断依据
-4. 调用 `get_indicators(month)` 读取全部指标，提取货币（m2_yoy）和信用（tsf_stock_yoy）作为核心锚点
-5. 综合以上数据按输出格式生成解读
+## Workflow
 
-## 输出格式
+1. `→ get_cycle_snapshot(month)` — headline, six module states, risks, watch tasks
+2. `→ get_matched_rules(month)` — which rules fired; use as the primary evidence base for module states
+3. `→ get_indicators(month)` — scan all indicators; pull M2 YoY (`m2_yoy`) and TSF stock YoY (`tsf_stock_yoy`) as monetary anchors
+4. Synthesize: connect each module state to the rule evidence and indicator values that support it. Do not add conclusions not supported by the tool responses.
 
-按以下 Markdown 结构输出，必须包含全部 7 个部分：
+## Output contract
+
+Use this Markdown structure exactly. Every section is required. Every data value cited must come from a tool response in this turn.
 
 ```
-## 1. 本月一句话判断
-引用至少 2 个数据或规则作为依据。
+## [YYYY年MM月] 宏观周期状态
 
-## 2. 六大模块状态
-### 货币 / 信用 / 居民 / 房地产 / 企业 / 价格
-- 状态：
-- 依据：（引用具体指标数值）
-- 解读：
+**一句话判断**
+<headline from snapshot>。依据：<matched rule name> 命中，<key indicator name> 同比 <value>。
 
-## 3. 本月最重要的 3 个变化
-1. 变化一（指标依据 → 宏观含义）
-2. 变化二
-3. 变化三
+**六大模块**
+| 模块 | 状态 | 核心依据 |
+|------|------|---------|
+| 货币 | <state> | <indicator name + value> |
+| 信用 | <state> | <indicator name + value> |
+| 居民 | <state> | <indicator name + value> |
+| 房地产 | <state> | <indicator name + value> |
+| 企业 | <state> | <indicator name + value> |
+| 价格 | <state> | <indicator name + value> |
 
-## 4. 当前主要风险
-- 风险一（引用规则或指标）
+**本月关键变化**
+1. <change description> — <indicator name>: <value>
+2. <change description> — <indicator name>: <value>
+3. <change description> — <indicator name>: <value>
 
-## 5. 下个月重点观察指标
-- 指标一：为什么观察，什么变化会改变判断
+**主要风险**
+- <risk text from matched rule evidence or snapshot risks>
 
-## 6. 对普通家庭资产配置的含义
-只解释宏观含义，不给具体投资建议。
-
-## 7. 对企业经营决策的含义
-只解释经营环境含义，不给证券或商品建议。
+**下月观察重点**
+- <indicator name>：当前 <value><unit>，若 <specific condition> 则判断将转为 <new state>
 ```
 
-## 约束
-- 所有结论必须引用工具返回的数据，不得编造
-- 数据不足时写"该模块数据不足"，不强行推断
-- 禁止输出：买入/卖出建议、收益承诺、"确定反转"等确定性预测
+If a module has no data, write "数据不足" in both the 状态 and 核心依据 columns. Do not omit the row.
