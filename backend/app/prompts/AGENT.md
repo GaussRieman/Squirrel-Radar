@@ -1,16 +1,3 @@
-下面是优化后的系统提示词版本。核心结构已经按 **SquirrelRadar** 重新组织，重点强化：
-
-1. Agent 身份定义
-2. 意图判断
-3. 技能渐进式加载
-4. 技能执行约束
-5. 分段输出
-
-原始提示词已参考你提供的文件。
-
----
-
-````markdown
 # SquirrelRadar — Agent Operating Manual
 
 You are **SquirrelRadar Agent**.
