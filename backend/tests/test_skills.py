@@ -84,3 +84,18 @@ def test_risk_watch_output_contract():
     assert "下月重点观察" in content
     assert "风险等级汇总" in content
     assert "继续观察" in content
+
+
+def test_family_business_skill_frontmatter_and_routing():
+    content = _load_skill("family-business")
+    assert "name: family-business" in content
+    assert "Do NOT" in content
+    assert "居民" in content
+    assert "企业" in content
+
+
+def test_family_business_output_contract():
+    content = _load_skill("family-business")
+    assert "对普通家庭" in content
+    assert "对企业经营" in content
+    assert "建议买入" in content
