@@ -68,16 +68,3 @@ class CycleSnapshot(Base):
     risks: Mapped[list] = mapped_column(JSON, default=list)
     watch_tasks: Mapped[list] = mapped_column(JSON, default=list)
     agent_brief: Mapped[str] = mapped_column(Text)
-
-
-class AgentMemory(Base):
-    __tablename__ = "agent_memory"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    conversation_id: Mapped[str] = mapped_column(String(128), index=True)
-    month: Mapped[str | None] = mapped_column(String(7), index=True)
-    question: Mapped[str] = mapped_column(Text)
-    answer_excerpt: Mapped[str] = mapped_column(Text)
-    intent: Mapped[str] = mapped_column(String(64), index=True)
-    skill: Mapped[str] = mapped_column(String(128))
-    context: Mapped[dict] = mapped_column(JSON, default=dict)

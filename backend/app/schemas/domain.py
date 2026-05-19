@@ -85,17 +85,10 @@ class DashboardRead(BaseModel):
 
 class AgentInterpretationRead(BaseModel):
     month: str
-    prompt_version: str
-    prompt_excerpt: str | None = None
     mode: str = "mock"
     model: str | None = None
-    tools: list[str] = []
-    intent: str | None = None
-    skill: str | None = None
-    context_summary: str | None = None
-    steps: list[str] = []
-    sections: list[dict] = []
     content: str
+    sections: list[dict] = []
 
 
 class AgentInterpretationRequest(BaseModel):
@@ -103,5 +96,4 @@ class AgentInterpretationRequest(BaseModel):
     use_model: bool = False
     question: str | None = None
     conversation_id: str = "default"
-    history: list[dict] = []
     selected_context: dict | None = None
