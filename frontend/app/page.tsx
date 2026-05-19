@@ -42,6 +42,7 @@ export default async function Home({ searchParams }: HomeProps) {
                   <tr>
                     <th>指标</th>
                     <th>模块</th>
+                    <th>来源</th>
                     <th>当前值</th>
                     <th>同比</th>
                     <th>环比</th>
@@ -71,9 +72,9 @@ export default async function Home({ searchParams }: HomeProps) {
                         >
                           <strong>{row.indicator.name}</strong>
                         </AgentContextButton>
-                        <span className="small">{row.indicator.source}</span>
                       </td>
                       <td>{row.indicator.category}</td>
+                      <td className="small">{row.indicator.source}</td>
                       <td>
                         {row.value}
                         {row.indicator.unit}

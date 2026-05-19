@@ -1,12 +1,12 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
 import type { AgentInterpretation } from "@/lib/api";
 
 type ChatMessage = {
   role: "user" | "assistant";
   content: string;
-  sections?: Array<{ title: string; body: string }>;
 };
 
 type HomeChatProps = {
@@ -77,21 +77,11 @@ export function HomeChat({ month, initialAgent }: HomeChatProps) {
       });
       if (!response.ok) throw new Error("Agent request failed");
       const data = (await response.json()) as AgentInterpretation;
-      setMessages((items) => [
-        ...items,
-        {
-          role: "assistant",
-          content: data.content,
-          sections: data.sections,
-        },
-      ]);
+      setMessages((items) => [...items, { role: "assistant", content: data.content }]);
     } catch {
       setMessages((items) => [
         ...items,
-        {
-          role: "assistant",
-          content: "请求失败，请重试。",
-        },
+        { role: "assistant", content: "请求失败，请重试。" },
       ]);
     } finally {
       setLoading(false);
@@ -110,7 +100,6 @@ export function HomeChat({ month, initialAgent }: HomeChatProps) {
     <aside className="chat-pane">
       <header className="chat-header">
         <span className="chat-header-title">宏观周期 Agent</span>
-        <span className="chat-header-month">{month}</span>
       </header>
 
       <div className="chat-messages">
@@ -120,24 +109,25 @@ export function HomeChat({ month, initialAgent }: HomeChatProps) {
             <p>可以问我本月的经济状态、规则命中原因、风险点或对家庭企业的含义。</p>
           </div>
         ) : null}
+
         {messages.map((message, index) => (
           <article className={`chat-message ${message.role}`} key={`${message.role}-${index}`}>
-            {message.role === "assistant" && message.sections?.length ? (
-              <div className="agent-sections">
-                {message.sections.map((section) => (
-                  <details key={section.title} open={message.sections?.length === 1}>
-                    <summary>{section.title}</summary>
-                    <p>{section.body}</p>
-                  </details>
-                ))}
-              </div>
-            ) : (
-              <div className="chat-content">{message.content}</div>
-            )}
+            <div className="chat-role-label">
+              {message.role === "user" ? "我" : "Agent"}
+            </div>
+            <div className="chat-content">
+              {message.role === "assistant" ? (
+                <ReactMarkdown>{message.content}</ReactMarkdown>
+              ) : (
+                message.content
+              )}
+            </div>
           </article>
         ))}
+
         {loading ? (
           <article className="chat-message assistant">
+            <div className="chat-role-label">Agent</div>
             <div className="chat-content chat-thinking">
               <span />
               <span />
@@ -152,9 +142,7 @@ export function HomeChat({ month, initialAgent }: HomeChatProps) {
         {selectedContext ? (
           <div className="selected-context">
             <span>上下文：{selectedContext.name || selectedContext.type}</span>
-            <button type="button" onClick={() => setSelectedContext(null)}>
-              ×
-            </button>
+            <button type="button" onClick={() => setSelectedContext(null)}>×</button>
           </div>
         ) : null}
         <div className="chat-input-row">

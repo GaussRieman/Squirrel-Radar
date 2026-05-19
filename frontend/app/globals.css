@@ -532,6 +532,18 @@ details p {
   justify-items: end;
 }
 
+.chat-role-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #5a7099;
+  padding: 0 2px;
+  letter-spacing: 0.03em;
+}
+
+.chat-message.user .chat-role-label {
+  text-align: right;
+}
+
 .chat-content {
   width: fit-content;
   max-width: 88%;
@@ -539,7 +551,6 @@ details p {
   border-radius: 10px;
   background: #182339;
   color: #dbe6ff;
-  white-space: pre-wrap;
   font-size: 13px;
   line-height: 1.7;
 }
@@ -547,6 +558,68 @@ details p {
 .chat-message.user .chat-content {
   background: #2563eb;
   color: #fff;
+  white-space: pre-wrap;
+}
+
+/* markdown inside assistant bubble */
+.chat-content p {
+  margin: 0 0 8px;
+}
+.chat-content p:last-child {
+  margin-bottom: 0;
+}
+.chat-content ul,
+.chat-content ol {
+  margin: 4px 0 8px;
+  padding-left: 18px;
+}
+.chat-content li {
+  margin-bottom: 3px;
+}
+.chat-content strong {
+  color: #fff;
+  font-weight: 600;
+}
+.chat-content h1,
+.chat-content h2,
+.chat-content h3 {
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  margin: 10px 0 4px;
+}
+.chat-content h1:first-child,
+.chat-content h2:first-child,
+.chat-content h3:first-child {
+  margin-top: 0;
+}
+.chat-content hr {
+  border: none;
+  border-top: 1px solid #243047;
+  margin: 10px 0;
+}
+.chat-content code {
+  background: #0b1220;
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 12px;
+}
+.chat-content table {
+  border-collapse: collapse;
+  font-size: 12px;
+  width: 100%;
+  margin: 6px 0;
+}
+.chat-content th,
+.chat-content td {
+  border: 1px solid #2c3e5a;
+  padding: 5px 8px;
+  text-align: left;
+}
+.chat-content th {
+  background: #111c31;
+  color: #9fb0cc;
+  font-weight: 600;
 }
 
 .chat-thinking {
