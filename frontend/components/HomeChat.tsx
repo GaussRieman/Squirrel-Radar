@@ -34,7 +34,7 @@ const QUICK_PROMPTS = [
 export function HomeChat({ month, initialAgent }: HomeChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
-      role: “assistant”,
+      role: "assistant",
       content: `已加载 ${month} 的指标、规则和周期快照。\n你可以继续追问，例如”为什么说信用偏弱？”或”下个月重点看什么？”。`,
     },
   ]);
