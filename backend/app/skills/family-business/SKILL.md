@@ -11,10 +11,12 @@ Translates macro cycle signals into plain-language implications for household fi
 
 ## Workflow
 
-1. `→ get_cycle_snapshot(month)` — headline and six-module states for overall context
-2. `→ get_indicators(month, category="居民")` — household indicators: `wage_income`, `household_mid_long_loan`, `core_cpi`
-3. `→ get_indicators(month, category="企业")` — business indicators: `enterprise_mid_long_loan`, `private_investment`, `industrial_profit`, `ppi`
+1. `→ get_cycle_snapshot(month="YYYY-MM")` — headline and six-module states for overall context
+2. `→ get_indicators(month="YYYY-MM", category="居民")` — household indicators: `wage_income`, `household_mid_long_loan`, `core_cpi`
+3. `→ get_indicators(month="YYYY-MM", category="企业")` — business indicators: `enterprise_mid_long_loan`, `private_investment`, `industrial_profit`, `ppi`
 4. For each indicator, connect the current value movement to a concrete behavioral implication — what it means for decisions, not what it means for asset prices
+
+If any indicator code is absent from the tool response, write "数据不足" for that line and continue — do not omit the line.
 
 ## Output contract
 

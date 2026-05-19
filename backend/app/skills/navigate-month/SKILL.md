@@ -15,18 +15,29 @@ Switches the dashboard's right-side data panel to the requested month by calling
    - "2025年3月" → "2025-03"
    - "去年3月" → resolve relative to the current month shown in the dashboard
    - If the month is ambiguous or unresolvable, call `get_available_months()` first and ask the user to confirm
-2. Call `→ navigate_to_month(YYYY-MM)`
+2. Call `→ navigate_to_month(month="YYYY-MM")`
 3. If the tool returns an error (month not in database), call `→ get_available_months()` and tell the user which months are available
-4. If navigation succeeded, call `→ get_cycle_snapshot(YYYY-MM)` to retrieve the headline
+4. If navigation succeeded, call `→ get_cycle_snapshot(month="YYYY-MM")` to retrieve the headline
 5. Write one confirmation sentence citing the headline
 
 ## Output contract
 
 ```
-→ navigate_to_month(YYYY-MM)
-→ get_cycle_snapshot(YYYY-MM)
+→ navigate_to_month(month="YYYY-MM")
+→ get_cycle_snapshot(month="YYYY-MM")
 
 已切换到 YYYY年MM月。当月判断：<headline>。
 ```
 
 Total response: 3 lines. Do not add module breakdowns, indicator tables, rule lists, or comparisons to other months — the right panel displays all of that.
+
+## Error path output
+
+If `navigate_to_month` returns an error:
+
+```
+→ navigate_to_month(month="YYYY-MM")
+→ get_available_months()
+
+未找到 YYYY年MM月 的数据。可选范围：<earliest month> 至 <latest month>。
+```

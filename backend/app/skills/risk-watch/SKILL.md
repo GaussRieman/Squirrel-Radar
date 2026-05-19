@@ -11,9 +11,9 @@ Scans matched rules and weak-status indicators to produce a concise risk registe
 
 ## Workflow
 
-1. `→ get_cycle_snapshot(month)` — read `risks` and `watch_tasks` arrays from the snapshot
-2. `→ get_matched_rules(month)` — read the `risk` field from each matched rule's evidence
-3. `→ get_indicators(month)` — identify any indicators with `status=weak` not already covered by a matched rule
+1. `→ get_cycle_snapshot(month="YYYY-MM")` — read `risks` and `watch_tasks` arrays from the snapshot
+2. `→ get_matched_rules(month="YYYY-MM")` — read the `risk` field and `severity` field from each matched rule's evidence. The `severity` field is `critical`, `warning`, or `caution`.
+3. `→ get_indicators(month="YYYY-MM")` — identify any indicators with `status=weak` not already covered by a matched rule
 4. Deduplicate across all three sources. Rank by severity: `critical` first, then `warning`, then `caution`
 
 ## Output contract
@@ -28,6 +28,7 @@ Scans matched rules and weak-status indicators to produce a concise risk registe
 2. ...
 
 **风险等级汇总**：critical <n> 条 | warning <n> 条 | caution <n> 条
+(severity counts come from the `severity` field in each matched rule returned by `get_matched_rules`)
 ```
 
 Watch items must specify a falsifiable condition. "继续观察" is not an acceptable watch item — every item must say what specific change would alter the current judgment.

@@ -11,10 +11,12 @@ Synthesizes the six-module state, matched rules, and key indicators into a struc
 
 ## Workflow
 
-1. `→ get_cycle_snapshot(month)` — headline, six module states, risks, watch tasks
-2. `→ get_matched_rules(month)` — which rules fired; use as the primary evidence base for module states
-3. `→ get_indicators(month)` — scan all indicators; pull M2 YoY (`m2_yoy`) and TSF stock YoY (`tsf_stock_yoy`) as monetary anchors
+1. `→ get_cycle_snapshot(month="YYYY-MM")` — headline, six module states, risks, watch tasks
+2. `→ get_matched_rules(month="YYYY-MM")` — which rules fired; use as the primary evidence base for module states
+3. `→ get_indicators(month="YYYY-MM")` — scan all indicators; pull M2 YoY (`m2_yoy`) and TSF stock YoY (`tsf_stock_yoy`) as monetary anchors
 4. Synthesize: connect each module state to the rule evidence and indicator values that support it. Do not add conclusions not supported by the tool responses.
+
+If `m2_yoy` or `tsf_stock_yoy` codes are not found in the indicators response, use the indicator with the highest `percentile_24m` in the 货币 category as the anchor instead.
 
 ## Output contract
 

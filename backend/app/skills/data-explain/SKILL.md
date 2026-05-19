@@ -12,11 +12,11 @@ Answers "what does this number mean?" — pulls the indicator's definition, inte
 ## Workflow
 
 1. Identify the indicator the user is asking about — by name or code from their message
-2. If the indicator code is unknown, `→ get_indicators(month)` to scan names and locate the correct code
-3. `→ get_indicator_detail(code, month)` — definition, interpretation, risk_note, and all current values
+2. If the indicator code is unknown, `→ get_indicators(month="YYYY-MM")` to scan names and locate the correct code
+3. `→ get_indicator_detail(code="CODE", month="YYYY-MM")` — definition, interpretation, risk_note, and all current values
 4. Explain: concept first, then current value in context of the interpretation field
 
-## Field reference (built-in knowledge — no tool call needed)
+## Field semantics (describes what each field name means — values still require a tool call)
 
 - **yoy**: year-on-year change rate — reflects medium-term trend direction
 - **mom**: month-on-month change rate — reflects short-term momentum

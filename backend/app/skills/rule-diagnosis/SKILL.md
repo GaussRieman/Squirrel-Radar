@@ -12,8 +12,8 @@ Traces a single rule's execution: reads its conditions, checks each one against 
 ## Workflow
 
 1. Identify the rule the user is asking about — by name, module state label, or description from their message
-2. `→ get_matched_rules(month)` — locate the `rule_id` if not already known from context
-3. `→ get_rule_detail(rule_id, month)` — read full execution log, all conditions, and evidence
+2. `→ get_matched_rules(month="YYYY-MM")` — locate the `rule_id` if not already known from context
+3. `→ get_rule_detail(rule_id="RULE_ID", month="YYYY-MM")` — read full execution log, all conditions, and evidence
 4. For each condition in the rule: state the requirement, state the actual value from the tool response, state pass (✓) or fail (✗)
 5. State the overall verdict and cite the risk implication if the rule fired
 
