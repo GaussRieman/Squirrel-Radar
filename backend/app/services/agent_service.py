@@ -227,7 +227,7 @@ def _build_tools(db: Session):
 
 
 def _load_system_prompt() -> str:
-    prompt_file = Path(__file__).resolve().parents[1] / "prompts" / "agent_interpretation_prompt.md"
+    prompt_file = Path(__file__).resolve().parents[1] / "prompts" / "AGENT.md"
     return prompt_file.read_text(encoding="utf-8")
 
 

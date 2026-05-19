@@ -1,6 +1,14 @@
 from pathlib import Path
 
 
+def test_load_system_prompt_returns_agent_md_content():
+    from app.services.agent_service import _load_system_prompt
+    content = _load_system_prompt()
+    assert "Macro Cycle Radar" in content
+    assert "How You Work" in content
+    assert "Self-Check Before Responding" in content
+
+
 def test_load_system_prompt_uses_agent_md(tmp_path, monkeypatch):
     from app.services import agent_service
     prompts_dir = Path(agent_service.__file__).resolve().parents[1] / "prompts"
