@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 from app.api.routes import dashboard
 from app.core.database import Base
 from app.models.domain import CycleSnapshot, IndicatorData, IndicatorDefinition, RuleResult
-from app.services.agent_service import AGENT_TOOL_NAMES, generate_mock_interpretation, get_agent_status
+from app.services.agent_service import generate_mock_interpretation, get_agent_status
 from app.services.rule_engine import evaluate_month
 from app.services.seed import seed_database
 from app.services.test_data_service import apply_test_scenario, load_test_scenarios
@@ -59,16 +59,24 @@ def test_agent_mock_interpretation_uses_seed_data():
     result = generate_mock_interpretation(db)
 
     assert result["month"]
-    assert result["prompt_version"] == "agent_interpretation_prompt.md"
-    assert result["tools"] == AGENT_TOOL_NAMES
+    assert result["mode"] == "mock"
     assert "## 1. 本月一句话判断" in result["content"]
-    assert "不提供具体投资建议" in result["content"]
+    assert isinstance(result["sections"], list)
 
 
 def test_agent_status_exposes_runtime_and_tools():
     status = get_agent_status()
     assert status["runtime"] == "DeepAgent"
-    assert set(status["tools"]) == set(AGENT_TOOL_NAMES)
+    expected_tools = {
+        "get_available_months",
+        "get_cycle_snapshot",
+        "get_indicators",
+        "get_indicator_detail",
+        "get_matched_rules",
+        "get_rule_detail",
+    }
+    assert set(status["tools"]) == expected_tools
+    assert "skills" in status
 
 
 def test_apply_test_scenario_updates_month_and_rules():

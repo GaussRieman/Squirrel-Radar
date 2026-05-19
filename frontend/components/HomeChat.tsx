@@ -6,10 +6,6 @@ import type { AgentInterpretation } from "@/lib/api";
 type ChatMessage = {
   role: "user" | "assistant";
   content: string;
-  intent?: string | null;
-  skill?: string | null;
-  contextSummary?: string | null;
-  steps?: string[];
   sections?: Array<{ title: string; body: string }>;
 };
 
@@ -38,11 +34,8 @@ const QUICK_PROMPTS = [
 export function HomeChat({ month, initialAgent }: HomeChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
-      role: "assistant",
-      content: `已加载 ${month} 的指标、规则和周期快照。\n你可以继续追问，例如“为什么说信用偏弱？”或“下个月重点看什么？”。`,
-      intent: initialAgent.intent,
-      skill: initialAgent.skill,
-      contextSummary: initialAgent.context_summary,
+      role: “assistant”,
+      content: `已加载 ${month} 的指标、规则和周期快照。\n你可以继续追问，例如”为什么说信用偏弱？”或”下个月重点看什么？”。`,
     },
   ]);
   const [input, setInput] = useState("");
@@ -87,10 +80,6 @@ export function HomeChat({ month, initialAgent }: HomeChatProps) {
           use_model: true,
           conversation_id: `macro-cycle-radar:${month}`,
           selected_context: selectedContext,
-          history: nextMessages.slice(-8).map((message) => ({
-            role: message.role,
-            content: message.content,
-          })),
         }),
       });
       if (!response.ok) throw new Error("Agent request failed");
@@ -100,10 +89,6 @@ export function HomeChat({ month, initialAgent }: HomeChatProps) {
         {
           role: "assistant",
           content: data.content,
-          intent: data.intent,
-          skill: data.skill,
-          contextSummary: data.context_summary,
-          steps: data.steps,
           sections: data.sections,
         },
       ]);
@@ -141,23 +126,7 @@ export function HomeChat({ month, initialAgent }: HomeChatProps) {
         {messages.map((message, index) => (
           <article className={`chat-message ${message.role}`} key={`${message.role}-${index}`}>
             <div className="chat-role">{message.role === "user" ? "你" : "Agent"}</div>
-            {message.role === "assistant" && (message.intent || message.skill) ? (
-              <div className="agent-meta">
-                {message.intent ? <span>{message.intent}</span> : null}
-                {message.skill ? <span>{message.skill}</span> : null}
-              </div>
-            ) : null}
             {!message.sections?.length ? <div className="chat-content">{message.content}</div> : null}
-            {message.role === "assistant" && message.contextSummary ? (
-              <div className="agent-context">{message.contextSummary}</div>
-            ) : null}
-            {message.role === "assistant" && message.steps?.length ? (
-              <div className="agent-steps">
-                {message.steps.map((step) => (
-                  <span key={step}>{step}</span>
-                ))}
-              </div>
-            ) : null}
             {message.role === "assistant" && message.sections?.length ? (
               <div className="agent-sections">
                 {message.sections.map((section) => (

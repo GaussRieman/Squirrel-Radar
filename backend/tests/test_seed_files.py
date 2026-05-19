@@ -32,10 +32,10 @@ def test_rules_use_supported_condition_fields():
 def test_agent_prompt_contains_required_sections():
     prompt = load_agent_interpretation_prompt()
     for section in [
-        "本月一句话判断",
-        "六大模块状态",
-        "当前主要风险",
-        "对普通家庭资产配置的含义",
-        "对企业经营决策的含义",
+        "可用工具",
+        "推理原则",
+        "Safety Constraints",
+        "Quality Checklist",
+        "先取数，再推理",
     ]:
         assert section in prompt

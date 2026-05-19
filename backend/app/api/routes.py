@@ -257,7 +257,6 @@ def create_agent_interpretation(
         use_model=payload.use_model,
         question=payload.question,
         conversation_id=payload.conversation_id,
-        history=payload.history,
         selected_context=payload.selected_context,
     )
 

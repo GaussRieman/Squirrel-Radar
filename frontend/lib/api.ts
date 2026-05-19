@@ -89,15 +89,8 @@ export type Dashboard = {
 
 export type AgentInterpretation = {
   month: string;
-  prompt_version: string;
-  prompt_excerpt?: string | null;
   mode: string;
   model?: string | null;
-  tools: string[];
-  intent?: string | null;
-  skill?: string | null;
-  context_summary?: string | null;
-  steps: string[];
   sections: Array<{ title: string; body: string }>;
   content: string;
 };
@@ -109,6 +102,7 @@ export type AgentStatus = {
   api_key_configured: boolean;
   base_url_configured: boolean;
   tools: string[];
+  skills: string[];
   fallback: string;
 };
 
