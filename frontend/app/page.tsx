@@ -35,26 +35,6 @@ export default async function Home({ searchParams }: HomeProps) {
             </div>
             <span>{dashboard.indicators.length} 项指标</span>
           </div>
-          <div className="field-help">
-            <span>
-              <strong>当前值</strong>：本月公布值
-            </span>
-            <span>
-              <strong>同比</strong>：较去年同月变化
-            </span>
-            <span>
-              <strong>环比</strong>：较上月变化
-            </span>
-            <span>
-              <strong>3个月趋势</strong>：近3个月平滑方向
-            </span>
-            <span>
-              <strong>24月分位</strong>：近24个月所处位置
-            </span>
-            <span>
-              <strong>状态</strong>：规则归纳后的强弱标签
-            </span>
-          </div>
           {dashboard.indicators.length ? (
             <div className="table-scroll">
               <table className="compact-table">

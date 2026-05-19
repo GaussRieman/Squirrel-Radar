@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import type { AgentInterpretation } from "@/lib/api";
 
 type ChatMessage = {
@@ -24,23 +24,16 @@ function getApiBaseUrl() {
   return process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 }
 
-const QUICK_PROMPTS = [
-  "本月处在什么宏观状态？",
-  "为什么有规则命中？",
-  "下个月重点观察什么？",
-  "对家庭和企业有什么含义？",
-];
-
 export function HomeChat({ month, initialAgent }: HomeChatProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      role: "assistant",
-      content: `已加载 ${month} 的指标、规则和周期快照。\n你可以继续追问，例如”为什么说信用偏弱？”或”下个月重点看什么？”。`,
-    },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedContext, setSelectedContext] = useState<SelectedContext | null>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
 
   useEffect(() => {
     function handleContext(event: Event) {
@@ -49,7 +42,7 @@ export function HomeChat({ month, initialAgent }: HomeChatProps) {
       if (detail.type === "indicator") {
         setInput(`解释一下 ${detail.name} 对本月周期判断的影响`);
       } else if (detail.type === "rule") {
-        setInput(`解释规则“${detail.name}”为什么${detail.matched ? "命中" : "未命中"}`);
+        setInput(`解释规则"${detail.name}"为什么${detail.matched ? "命中" : "未命中"}`);
       }
     }
     window.addEventListener("agent-context-selected", handleContext);
@@ -92,41 +85,43 @@ export function HomeChat({ month, initialAgent }: HomeChatProps) {
           sections: data.sections,
         },
       ]);
-    } catch (error) {
+    } catch {
       setMessages((items) => [
         ...items,
         {
           role: "assistant",
-          content: "Agent 调用失败。请确认后端服务和模型配置可用后重试。",
+          content: "请求失败，请重试。",
         },
       ]);
     } finally {
       setLoading(false);
+      setSelectedContext(null);
+    }
+  }
+
+  function handleKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      submitQuestion(input);
     }
   }
 
   return (
     <aside className="chat-pane">
-      <div className="chat-head">
-        <div>
-          <span className="eyebrow">DeepAgent</span>
-          <h2>宏观周期对话</h2>
-        </div>
-        <span className="chat-month">{month}</span>
-      </div>
-
-      <div className="agent-capabilities">
-        <span>意图判断</span>
-        <span>技能路由</span>
-        <span>工具取数</span>
-        <span>会话记忆</span>
-      </div>
+      <header className="chat-header">
+        <span className="chat-header-title">宏观周期 Agent</span>
+        <span className="chat-header-month">{month}</span>
+      </header>
 
       <div className="chat-messages">
+        {messages.length === 0 && !loading ? (
+          <div className="chat-empty">
+            <p>你好，我是宏观周期 Agent。</p>
+            <p>可以问我本月的经济状态、规则命中原因、风险点或对家庭企业的含义。</p>
+          </div>
+        ) : null}
         {messages.map((message, index) => (
           <article className={`chat-message ${message.role}`} key={`${message.role}-${index}`}>
-            <div className="chat-role">{message.role === "user" ? "你" : "Agent"}</div>
-            {!message.sections?.length ? <div className="chat-content">{message.content}</div> : null}
             {message.role === "assistant" && message.sections?.length ? (
               <div className="agent-sections">
                 {message.sections.map((section) => (
@@ -136,23 +131,21 @@ export function HomeChat({ month, initialAgent }: HomeChatProps) {
                   </details>
                 ))}
               </div>
-            ) : null}
+            ) : (
+              <div className="chat-content">{message.content}</div>
+            )}
           </article>
         ))}
         {loading ? (
           <article className="chat-message assistant">
-            <div className="chat-role">Agent</div>
-            <div className="chat-content">正在读取指标、规则和快照...</div>
+            <div className="chat-content chat-thinking">
+              <span />
+              <span />
+              <span />
+            </div>
           </article>
         ) : null}
-      </div>
-
-      <div className="quick-prompts">
-        {QUICK_PROMPTS.map((prompt) => (
-          <button type="button" key={prompt} onClick={() => submitQuestion(prompt)} disabled={loading}>
-            {prompt}
-          </button>
-        ))}
+        <div ref={bottomRef} />
       </div>
 
       <form className="chat-input" onSubmit={handleSubmit}>
@@ -160,20 +153,23 @@ export function HomeChat({ month, initialAgent }: HomeChatProps) {
           <div className="selected-context">
             <span>上下文：{selectedContext.name || selectedContext.type}</span>
             <button type="button" onClick={() => setSelectedContext(null)}>
-              清除
+              ×
             </button>
           </div>
         ) : null}
-        <textarea
-          aria-label="向 Agent 提问"
-          placeholder="例如：本月为什么判断信用偏弱？"
-          rows={3}
-          value={input}
-          onChange={(event) => setInput(event.target.value)}
-        />
-        <button type="submit" disabled={loading || !input.trim()}>
-          发送
-        </button>
+        <div className="chat-input-row">
+          <textarea
+            aria-label="向 Agent 提问"
+            placeholder={`问问 ${month} 的宏观状态…`}
+            rows={1}
+            value={input}
+            onChange={(event) => setInput(event.target.value)}
+            onKeyDown={handleKeyDown}
+          />
+          <button type="submit" disabled={loading || !input.trim()} aria-label="发送">
+            ↑
+          </button>
+        </div>
       </form>
     </aside>
   );
