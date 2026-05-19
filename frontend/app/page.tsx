@@ -1,8 +1,12 @@
+"use client";
+
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { AgentContextButton } from "@/components/AgentContextButton";
 import { HomeChat } from "@/components/HomeChat";
 import { MonthSelector } from "@/components/MonthSelector";
 import { TrendChart } from "@/components/TrendChart";
-import { getAgentInterpretation, getDashboard } from "@/lib/api";
+import { type Dashboard, getDashboard } from "@/lib/api";
 
 const statusText: Record<string, string> = {
   strong: "偏强",
@@ -10,23 +14,66 @@ const statusText: Record<string, string> = {
   weak: "偏弱",
 };
 
-type HomeProps = {
-  searchParams?: Promise<{ month?: string }>;
-};
+function formatNumber(value: number | null) {
+  if (value === null || value === undefined) return "-";
+  return Number.isInteger(value) ? String(value) : value.toFixed(2);
+}
 
-export default async function Home({ searchParams }: HomeProps) {
-  const params = await searchParams;
-  const selectedMonth = params?.month;
-  const dashboard = await getDashboard(selectedMonth);
-  const agent = await getAgentInterpretation(dashboard.month);
+function HomeInner() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const urlMonth = searchParams.get("month") ?? undefined;
+
+  const [dashboard, setDashboard] = useState<Dashboard | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const loadDashboard = useCallback(async (month?: string) => {
+    setLoading(true);
+    try {
+      const data = await getDashboard(month);
+      setDashboard(data);
+      // sync URL without full navigation
+      const params = new URLSearchParams(window.location.search);
+      params.set("month", data.month);
+      router.replace(`/?${params.toString()}`, { scroll: false });
+    } finally {
+      setLoading(false);
+    }
+  }, [router]);
+
+  useEffect(() => {
+    loadDashboard(urlMonth);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Agent triggers this to switch month
+  useEffect(() => {
+    function handleNavigate(event: Event) {
+      const { month } = (event as CustomEvent<{ month: string }>).detail;
+      loadDashboard(month);
+    }
+    window.addEventListener("agent-navigate-month", handleNavigate);
+    return () => window.removeEventListener("agent-navigate-month", handleNavigate);
+  }, [loadDashboard]);
+
+  if (!dashboard) {
+    return (
+      <main className="radar-workspace">
+        <div className="chat-pane" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <span style={{ color: "#5a7099", fontSize: 13 }}>加载中…</span>
+        </div>
+        <div className="display-pane" />
+      </main>
+    );
+  }
+
   const matchedRules = dashboard.rule_results.filter((rule) => rule.matched);
   const sortedRules = [...dashboard.rule_results].sort((a, b) => Number(b.matched) - Number(a.matched));
 
   return (
     <main className="radar-workspace">
-      <HomeChat month={dashboard.month} initialAgent={agent} />
+      <HomeChat month={dashboard.month} />
 
-      <section className="display-pane">
+      <section className={`display-pane${loading ? " pane-loading" : ""}`}>
         <section className="panel display-table">
           <div className="panel-title-row">
             <div className="table-title">
@@ -75,10 +122,7 @@ export default async function Home({ searchParams }: HomeProps) {
                       </td>
                       <td>{row.indicator.category}</td>
                       <td className="small">{row.indicator.source}</td>
-                      <td>
-                        {row.value}
-                        {row.indicator.unit}
-                      </td>
+                      <td>{row.value}{row.indicator.unit}</td>
                       <td>{formatNumber(row.yoy)}</td>
                       <td>{formatNumber(row.mom)}</td>
                       <td>{formatNumber(row.trend_3m)}</td>
@@ -111,7 +155,7 @@ export default async function Home({ searchParams }: HomeProps) {
               <span>{matchedRules.length} 条命中</span>
             </div>
             <div className="rules rules-scroll">
-              {dashboard.rule_results.length ? (
+              {sortedRules.length ? (
                 sortedRules.map((rule) => (
                   <article className={`rule ${rule.matched ? "matched" : ""}`} key={rule.rule_id}>
                     <div className="rule-title">
@@ -147,7 +191,10 @@ export default async function Home({ searchParams }: HomeProps) {
   );
 }
 
-function formatNumber(value: number | null) {
-  if (value === null || value === undefined) return "-";
-  return Number.isInteger(value) ? String(value) : value.toFixed(2);
+export default function Home() {
+  return (
+    <Suspense>
+      <HomeInner />
+    </Suspense>
+  );
 }

@@ -199,6 +199,22 @@ def _build_tools(db: Session):
                 ensure_ascii=False,
             )
 
+    _navigate_month: list[str] = []
+
+    @tool
+    def navigate_to_month(month: str) -> str:
+        """切换右侧数据面板到指定月份（格式 YYYY-MM）。当用户说"查看 X 月数据"或"切换到 X 月"时调用此工具。调用后在回复中告知用户已切换。"""
+        import re
+        if not re.fullmatch(r"\d{4}-\d{2}", month):
+            return json.dumps({"error": f"月份格式错误，应为 YYYY-MM，收到：{month}"}, ensure_ascii=False)
+        available = db.scalars(
+            select(IndicatorData.month).distinct().order_by(desc(IndicatorData.month))
+        ).all()
+        if month not in available:
+            return json.dumps({"error": f"{month} 无数据，可用月份：{list(available)}"}, ensure_ascii=False)
+        _navigate_month.append(month)
+        return json.dumps({"navigated": month, "message": f"已切换到 {month}"}, ensure_ascii=False)
+
     return [
         get_available_months,
         get_cycle_snapshot,
@@ -206,7 +222,8 @@ def _build_tools(db: Session):
         get_indicator_detail,
         get_matched_rules,
         get_rule_detail,
-    ]
+        navigate_to_month,
+    ], _navigate_month
 
 
 def _load_system_prompt() -> str:
@@ -275,7 +292,7 @@ def generate_interpretation(
     evaluate_month(db, target_month)
 
     if use_model and settings.enable_model_calls:
-        content = _run_deep_agent(db, target_month, question, conversation_id, selected_context)
+        content, navigate_month = _run_deep_agent(db, target_month, question, conversation_id, selected_context)
         if content:
             return {
                 "month": target_month,
@@ -283,6 +300,7 @@ def generate_interpretation(
                 "model": settings.agent_model,
                 "content": content,
                 "sections": _extract_sections(content),
+                "navigate_month": navigate_month,
             }
 
     content = _render_mock(db, target_month, question)
@@ -292,6 +310,7 @@ def generate_interpretation(
         "model": None,
         "content": content,
         "sections": _extract_sections(content),
+        "navigate_month": None,
     }
 
 
@@ -305,17 +324,18 @@ def _run_deep_agent(
     question: str | None,
     conversation_id: str,
     selected_context: dict | None,
-) -> str | None:
+) -> tuple[str | None, str | None]:
     try:
         from deepagents import create_deep_agent
         from deepagents.backends.state import StateBackend
 
         skill_files = _load_skill_files()
         skill_paths = list({f"/skills/{Path(p).parent.name}/" for p in skill_files})
+        tools, navigate_month_ref = _build_tools(db)
 
         agent = create_deep_agent(
             model=_build_model(),
-            tools=_build_tools(db),
+            tools=tools,
             skills=skill_paths,
             system_prompt=_load_system_prompt(),
             checkpointer=_get_checkpointer(),
@@ -344,11 +364,13 @@ def _run_deep_agent(
 
         messages = result.get("messages", []) if isinstance(result, dict) else []
         if not messages:
-            return None
+            return None, None
         last = messages[-1]
-        return getattr(last, "content", None) or (last.get("content") if isinstance(last, dict) else None)
+        content = getattr(last, "content", None) or (last.get("content") if isinstance(last, dict) else None)
+        navigate_month = navigate_month_ref[-1] if navigate_month_ref else None
+        return content, navigate_month
     except Exception as exc:
-        return f"模型调用失败，已返回错误信息供排查：{exc}"
+        return f"模型调用失败，已返回错误信息供排查：{exc}", None
 
 
 def _render_mock(db: Session, month: str, question: str | None) -> str:

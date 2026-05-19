@@ -11,7 +11,6 @@ type ChatMessage = {
 
 type HomeChatProps = {
   month: string;
-  initialAgent: AgentInterpretation;
 };
 
 type SelectedContext = Record<string, unknown> & {
@@ -24,7 +23,7 @@ function getApiBaseUrl() {
   return process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 }
 
-export function HomeChat({ month, initialAgent }: HomeChatProps) {
+export function HomeChat({ month }: HomeChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -78,6 +77,11 @@ export function HomeChat({ month, initialAgent }: HomeChatProps) {
       if (!response.ok) throw new Error("Agent request failed");
       const data = (await response.json()) as AgentInterpretation;
       setMessages((items) => [...items, { role: "assistant", content: data.content }]);
+      if (data.navigate_month) {
+        window.dispatchEvent(
+          new CustomEvent("agent-navigate-month", { detail: { month: data.navigate_month } })
+        );
+      }
     } catch {
       setMessages((items) => [
         ...items,

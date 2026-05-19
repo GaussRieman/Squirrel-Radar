@@ -14,6 +14,7 @@
 - `get_indicator_detail(code, month)` — 单指标完整字段 + 定义 + 解读
 - `get_matched_rules(month)` — 本月命中规则 + evidence
 - `get_rule_detail(rule_id, month)` — 单条规则完整执行日志
+- `navigate_to_month(month)` — **切换右侧数据面板到指定月份**。当用户说"查看 X 月""切换到 X 月""看一下 X 月数据"时，必须调用此工具
 
 ## 推理原则
 

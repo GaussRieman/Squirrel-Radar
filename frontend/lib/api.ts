@@ -93,6 +93,7 @@ export type AgentInterpretation = {
   model?: string | null;
   sections: Array<{ title: string; body: string }>;
   content: string;
+  navigate_month?: string | null;
 };
 
 export type AgentStatus = {

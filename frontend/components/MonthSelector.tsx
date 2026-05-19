@@ -7,9 +7,9 @@ export function MonthSelector({ months, currentMonth }: { months: string[]; curr
       value={currentMonth}
       aria-label="选择月份"
       onChange={(event) => {
-        const params = new URLSearchParams(window.location.search);
-        params.set("month", event.target.value);
-        window.location.href = `/?${params.toString()}`;
+        window.dispatchEvent(
+          new CustomEvent("agent-navigate-month", { detail: { month: event.target.value } })
+        );
       }}
     >
       {months.map((month) => (

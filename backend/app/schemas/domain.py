@@ -89,6 +89,7 @@ class AgentInterpretationRead(BaseModel):
     model: str | None = None
     content: str
     sections: list[dict] = []
+    navigate_month: str | None = None
 
 
 class AgentInterpretationRequest(BaseModel):
