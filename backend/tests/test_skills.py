@@ -38,3 +38,18 @@ def test_cycle_summary_output_contract_has_required_sections():
     assert "六大模块" in content
     assert "主要风险" in content
     assert "下月观察" in content
+
+
+def test_rule_diagnosis_skill_frontmatter_and_routing():
+    content = _load_skill("rule-diagnosis")
+    assert "name: rule-diagnosis" in content
+    assert "Do NOT" in content
+    assert "get_rule_detail" in content
+    assert "get_matched_rules" in content
+
+
+def test_rule_diagnosis_output_contract():
+    content = _load_skill("rule-diagnosis")
+    assert "条件核查" in content
+    assert "结论" in content
+    assert "风险含义" in content
