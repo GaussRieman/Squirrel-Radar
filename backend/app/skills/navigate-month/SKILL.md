@@ -19,6 +19,7 @@ Switches the dashboard's right-side data panel to the requested month by calling
 3. If the tool returns an error (month not in database), call `→ get_available_months()` and tell the user which months are available
 4. If navigation succeeded, call `→ get_cycle_snapshot(month="YYYY-MM")` to retrieve the headline
 5. Write one confirmation sentence citing the headline
+6. **STOP. Do not call any other tools.** The right panel already displays all indicators, rules, and charts.
 
 ## Output contract
 
@@ -29,7 +30,7 @@ Switches the dashboard's right-side data panel to the requested month by calling
 已切换到 YYYY年MM月。当月判断：<headline>。
 ```
 
-Total response: 3 lines. Do not add module breakdowns, indicator tables, rule lists, or comparisons to other months — the right panel displays all of that.
+**Hard limit: exactly 2 tool calls, exactly 1 sentence of text.** Any additional tool calls (`get_indicators`, `get_matched_rules`, etc.) after `get_cycle_snapshot` are a violation of this contract. The right panel shows all data — do not repeat it in chat.
 
 ## Error path output
 
