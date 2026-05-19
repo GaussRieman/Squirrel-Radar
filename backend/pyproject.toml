@@ -1,0 +1,20 @@
+[project]
+name = "macro-cycle-radar-backend"
+version = "0.1.0"
+description = "FastAPI backend for Macro Cycle Radar"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi==0.115.6",
+  "uvicorn[standard]==0.34.0",
+  "sqlalchemy==2.0.36",
+  "pydantic-settings==2.7.1",
+  "python-multipart==0.0.20",
+  "PyYAML==6.0.3",
+  "alembic>=1.18.4",
+  "pytest>=9.0.3",
+  "deepagents>=0.6.1",
+  "langchain-openai>=1.2.1",
+]
+
+[tool.uv]
+package = false

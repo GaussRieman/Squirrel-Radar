@@ -1,0 +1,20 @@
+{
+  "scripts": {
+    "dev": "next dev -H 0.0.0.0",
+    "build": "next build",
+    "typecheck": "tsc --noEmit",
+    "start": "next start -H 0.0.0.0"
+  },
+  "dependencies": {
+    "next": "^16.2.6",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "recharts": "2.15.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.7",
+    "@types/react": "19.0.7",
+    "@types/react-dom": "19.0.3",
+    "typescript": "5.7.3"
+  }
+}

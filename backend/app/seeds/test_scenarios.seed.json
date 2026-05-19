@@ -1,0 +1,62 @@
+[
+  {
+    "scenario_id": "weak_credit_defensive_household",
+    "name": "钱宽信用弱 + 居民防御",
+    "month": "2026-05",
+    "description": "流动性不紧，但社融、居民贷款、地产和价格偏弱。",
+    "data": {
+      "m2_yoy": {"value": 9.4, "yoy": 9.4, "mom": 0.2, "trend_3m": 9.2, "percentile_24m": 82, "status": "strong"},
+      "tsf_stock_yoy": {"value": 8.3, "yoy": 8.3, "mom": -0.1, "trend_3m": 8.4, "percentile_24m": 28, "status": "weak"},
+      "new_rmb_loan": {"value": 7600, "yoy": -12.4, "mom": -900, "trend_3m": 8200, "percentile_24m": 24, "status": "weak"},
+      "household_mid_long_loan": {"value": 900, "yoy": -8.2, "mom": -120, "trend_3m": 980, "percentile_24m": 18, "status": "weak"},
+      "enterprise_mid_long_loan": {"value": 5100, "yoy": 1.4, "mom": 90, "trend_3m": 5020, "percentile_24m": 48, "status": "neutral"},
+      "core_cpi": {"value": 0.5, "yoy": 0.5, "mom": 0.0, "trend_3m": 0.55, "percentile_24m": 22, "status": "weak"},
+      "ppi": {"value": -2.3, "yoy": -2.3, "mom": -0.2, "trend_3m": -2.1, "percentile_24m": 18, "status": "weak"},
+      "secondhand_home_price_mom_70c": {"value": -0.5, "yoy": -4.8, "mom": -0.5, "trend_3m": -0.42, "percentile_24m": 14, "status": "weak"},
+      "commodity_house_sales_area": {"value": -11.5, "yoy": -11.5, "mom": -1.1, "trend_3m": -10.4, "percentile_24m": 16, "status": "weak"},
+      "wage_income": {"value": 4.6, "yoy": 4.6, "mom": -0.1, "trend_3m": 4.7, "percentile_24m": 30, "status": "weak"},
+      "private_investment": {"value": -1.2, "yoy": -1.2, "mom": -0.2, "trend_3m": -0.9, "percentile_24m": 26, "status": "weak"},
+      "industrial_profit": {"value": 2.4, "yoy": 2.4, "mom": -0.4, "trend_3m": 2.9, "percentile_24m": 32, "status": "neutral"}
+    }
+  },
+  {
+    "scenario_id": "endogenous_repair",
+    "name": "内生修复",
+    "month": "2026-05",
+    "description": "居民、企业、价格和房地产数据同步改善。",
+    "data": {
+      "m2_yoy": {"value": 8.8, "yoy": 8.8, "mom": 0.0, "trend_3m": 8.9, "percentile_24m": 62, "status": "strong"},
+      "tsf_stock_yoy": {"value": 9.5, "yoy": 9.5, "mom": 0.3, "trend_3m": 9.2, "percentile_24m": 76, "status": "strong"},
+      "new_rmb_loan": {"value": 11800, "yoy": 12.5, "mom": 1200, "trend_3m": 10900, "percentile_24m": 74, "status": "strong"},
+      "household_mid_long_loan": {"value": 1600, "yoy": 6.8, "mom": 240, "trend_3m": 1450, "percentile_24m": 70, "status": "strong"},
+      "enterprise_mid_long_loan": {"value": 6200, "yoy": 9.6, "mom": 420, "trend_3m": 5900, "percentile_24m": 72, "status": "strong"},
+      "core_cpi": {"value": 1.0, "yoy": 1.0, "mom": 0.1, "trend_3m": 0.9, "percentile_24m": 66, "status": "strong"},
+      "ppi": {"value": 0.3, "yoy": 0.3, "mom": 0.4, "trend_3m": 0.0, "percentile_24m": 64, "status": "strong"},
+      "secondhand_home_price_mom_70c": {"value": 0.1, "yoy": -0.8, "mom": 0.1, "trend_3m": 0.0, "percentile_24m": 68, "status": "strong"},
+      "commodity_house_sales_area": {"value": 1.5, "yoy": 1.5, "mom": 2.3, "trend_3m": 0.8, "percentile_24m": 72, "status": "strong"},
+      "wage_income": {"value": 5.8, "yoy": 5.8, "mom": 0.2, "trend_3m": 5.6, "percentile_24m": 70, "status": "strong"},
+      "private_investment": {"value": 2.6, "yoy": 2.6, "mom": 0.5, "trend_3m": 2.1, "percentile_24m": 74, "status": "strong"},
+      "industrial_profit": {"value": 9.2, "yoy": 9.2, "mom": 1.1, "trend_3m": 8.4, "percentile_24m": 78, "status": "strong"}
+    }
+  },
+  {
+    "scenario_id": "cost_push_pressure",
+    "name": "成本推动压力",
+    "month": "2026-05",
+    "description": "PPI上行但核心CPI和利润没有同步改善。",
+    "data": {
+      "m2_yoy": {"value": 8.7, "yoy": 8.7, "mom": 0.1, "trend_3m": 8.6, "percentile_24m": 58, "status": "neutral"},
+      "tsf_stock_yoy": {"value": 8.9, "yoy": 8.9, "mom": 0.1, "trend_3m": 8.8, "percentile_24m": 54, "status": "neutral"},
+      "new_rmb_loan": {"value": 9700, "yoy": 2.4, "mom": 300, "trend_3m": 9400, "percentile_24m": 52, "status": "neutral"},
+      "household_mid_long_loan": {"value": 1180, "yoy": -1.5, "mom": 60, "trend_3m": 1100, "percentile_24m": 42, "status": "neutral"},
+      "enterprise_mid_long_loan": {"value": 5600, "yoy": 4.4, "mom": 250, "trend_3m": 5400, "percentile_24m": 56, "status": "neutral"},
+      "core_cpi": {"value": 0.9, "yoy": 0.9, "mom": 0.0, "trend_3m": 0.85, "percentile_24m": 52, "status": "neutral"},
+      "ppi": {"value": 3.4, "yoy": 3.4, "mom": 0.8, "trend_3m": 2.7, "percentile_24m": 86, "status": "strong"},
+      "secondhand_home_price_mom_70c": {"value": -0.1, "yoy": -2.4, "mom": -0.1, "trend_3m": -0.12, "percentile_24m": 38, "status": "neutral"},
+      "commodity_house_sales_area": {"value": -3.2, "yoy": -3.2, "mom": 0.5, "trend_3m": -3.8, "percentile_24m": 42, "status": "neutral"},
+      "wage_income": {"value": 5.1, "yoy": 5.1, "mom": 0.1, "trend_3m": 5.0, "percentile_24m": 50, "status": "neutral"},
+      "private_investment": {"value": 0.6, "yoy": 0.6, "mom": 0.2, "trend_3m": 0.4, "percentile_24m": 46, "status": "neutral"},
+      "industrial_profit": {"value": 3.8, "yoy": 3.8, "mom": -0.3, "trend_3m": 4.0, "percentile_24m": 44, "status": "neutral"}
+    }
+  }
+]

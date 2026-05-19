@@ -1,0 +1,33 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    environment:
+      DATABASE_URL: sqlite:////app/data/macro_cycle_radar.db
+      CORS_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      AGENT_MODEL: ${AGENT_MODEL:-openai:gpt-5.4}
+      ENABLE_MODEL_CALLS: ${ENABLE_MODEL_CALLS:-true}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/app:/app/app
+      - backend_data:/app/data
+
+  frontend:
+    build:
+      context: ./frontend
+    environment:
+      API_BASE_URL: http://backend:8000
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+
+volumes:
+  backend_data:
