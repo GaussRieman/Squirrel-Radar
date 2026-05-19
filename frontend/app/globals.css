@@ -457,7 +457,7 @@ details p {
   height: 100vh;
   padding: 16px;
   display: grid;
-  grid-template-columns: 360px minmax(0, 1fr);
+  grid-template-columns: 440px minmax(0, 1fr);
   gap: 16px;
   overflow: hidden;
 }
@@ -531,7 +531,8 @@ details p {
   align-content: start;
   gap: 12px;
   padding: 16px;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .chat-message {
@@ -643,9 +644,9 @@ details p {
 
 .quick-prompts {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   padding: 10px 12px 0;
-  overflow-x: auto;
 }
 
 .quick-prompts button {
