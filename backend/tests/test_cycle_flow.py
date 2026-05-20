@@ -74,6 +74,7 @@ def test_agent_status_exposes_runtime_and_tools():
         "get_indicator_detail",
         "get_matched_rules",
         "get_rule_detail",
+        "navigate_to_month",
     }
     assert set(status["tools"]) == expected_tools
     assert "skills" in status

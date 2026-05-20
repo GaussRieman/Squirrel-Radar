@@ -1,6 +1,6 @@
 ---
 name: cycle-summary
-description: Generate a full macro cycle state summary for a given month. Use this skill when the user asks about the overall economic state, the headline judgment, what is happening this month, or requests a comprehensive breakdown of all six modules. Do NOT use this skill for questions about a single indicator, a single rule, or when the user only wants to navigate to a month.
+description: Generate a concise macro cycle state summary for a given month. Use this skill when the user asks about the overall economic state, the headline judgment, what is happening this month, or requests a comprehensive breakdown of all six modules. Do NOT use this skill for questions about a single indicator, a single rule, latest-data viewing, or when the user only wants to navigate to a month.
 ---
 
 # Cycle Summary
@@ -21,6 +21,7 @@ If `m2_yoy` or `tsf_stock_yoy` codes are not found in the indicators response, u
 ## Output contract
 
 Use this Markdown structure exactly. Every section is required. Every data value cited must come from a tool response in this turn.
+Do not output a core indicator table or a six-module table. The right-side panel already displays the full data. Use short lists that stream cleanly.
 
 ```
 ## [YYYY年MM月] 宏观周期状态
@@ -29,14 +30,12 @@ Use this Markdown structure exactly. Every section is required. Every data value
 <headline from snapshot>。依据：<matched rule name> 命中，<key indicator name> 同比 <value>。
 
 **六大模块**
-| 模块 | 状态 | 核心依据 |
-|------|------|---------|
-| 货币 | <state> | <indicator name + value> |
-| 信用 | <state> | <indicator name + value> |
-| 居民 | <state> | <indicator name + value> |
-| 房地产 | <state> | <indicator name + value> |
-| 企业 | <state> | <indicator name + value> |
-| 价格 | <state> | <indicator name + value> |
+- 货币：<state>，核心依据：<one short evidence item>
+- 信用：<state>，核心依据：<one short evidence item>
+- 居民：<state>，核心依据：<one short evidence item>
+- 房地产：<state>，核心依据：<one short evidence item>
+- 企业：<state>，核心依据：<one short evidence item>
+- 价格：<state>，核心依据：<one short evidence item>
 
 **本月关键变化**
 1. <change description> — <indicator name>: <value>
@@ -50,4 +49,4 @@ Use this Markdown structure exactly. Every section is required. Every data value
 - <indicator name>：当前 <value><unit>，若 <specific condition> 则判断将转为 <new state>
 ```
 
-If a module has no data, write "数据不足" in both the 状态 and 核心依据 columns. Do not omit the row.
+If a module has no data, write "数据不足" for that module. Do not omit the row.

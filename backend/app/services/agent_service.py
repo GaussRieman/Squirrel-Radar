@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import sqlite3 as _sqlite3
 from pathlib import Path
 
@@ -265,6 +266,7 @@ def get_agent_status() -> dict:
             "get_indicator_detail",
             "get_matched_rules",
             "get_rule_detail",
+            "navigate_to_month",
         ],
         "skills": [p.parent.name for p in _SKILLS_DIR.glob("*/SKILL.md")],
         "fallback": "未配置密钥或模型调用失败时返回本地 mock 解读。",
@@ -279,6 +281,10 @@ def generate_interpretation(
     conversation_id: str = "default",
     selected_context: dict | None = None,
 ) -> dict:
+    data_view_response = build_data_view_response(db, question)
+    if data_view_response:
+        return data_view_response
+
     target_month = month or db.scalar(select(IndicatorData.month).order_by(desc(IndicatorData.month)))
     if not target_month:
         return {
@@ -292,7 +298,9 @@ def generate_interpretation(
     evaluate_month(db, target_month)
 
     if use_model and settings.enable_model_calls:
-        content, navigate_month = _run_deep_agent(db, target_month, question, conversation_id, selected_context)
+        content, navigate_month, error = _run_deep_agent(
+            db, target_month, question, conversation_id, selected_context
+        )
         if content:
             return {
                 "month": target_month,
@@ -301,6 +309,23 @@ def generate_interpretation(
                 "content": content,
                 "sections": _extract_sections(content),
                 "navigate_month": navigate_month,
+            }
+        if error:
+            content = _render_mock(db, target_month, question)
+            content = "\n\n".join(
+                [
+                    content,
+                    "## Agent 状态",
+                    f"模型调用失败，已回退到本地 mock 解读。错误信息：{error}",
+                ]
+            )
+            return {
+                "month": target_month,
+                "mode": "mock",
+                "model": None,
+                "content": content,
+                "sections": _extract_sections(content),
+                "navigate_month": None,
             }
 
     content = _render_mock(db, target_month, question)
@@ -318,45 +343,107 @@ def generate_mock_interpretation(db: Session, month: str | None = None) -> dict:
     return generate_interpretation(db, month, use_model=False)
 
 
+def build_data_view_response(db: Session, question: str | None) -> dict | None:
+    target_month = _parse_data_view_month(question)
+    if not target_month:
+        return None
+    available_months = db.scalars(
+        select(IndicatorData.month).distinct().order_by(desc(IndicatorData.month))
+    ).all()
+    if not available_months:
+        return {
+            "month": "",
+            "mode": "mock",
+            "model": None,
+            "content": "当前数据不足以切换：没有可用的指标数据。",
+            "sections": [],
+            "navigate_month": None,
+        }
+    if target_month == "latest":
+        target_month = available_months[0]
+        label = f"最新月份 {target_month}"
+    else:
+        label = f"{target_month}"
+    if target_month not in available_months:
+        content = "\n".join(
+            [
+                "→ get_available_months()",
+                f"→ navigate_to_month(month=\"{target_month}\")",
+                "",
+                f"未找到 {target_month} 的数据。可选范围：{available_months[-1]} 至 {available_months[0]}。",
+            ]
+        )
+        return {
+            "month": target_month,
+            "mode": "mock",
+            "model": None,
+            "content": content,
+            "sections": _extract_sections(content),
+            "navigate_month": None,
+        }
+
+    evaluate_month(db, target_month)
+    snapshot = db.scalar(select(CycleSnapshot).where(CycleSnapshot.month == target_month))
+    headline = snapshot.headline if snapshot else "当前数据不足以形成完整周期判断"
+    content = "\n".join(
+        [
+            "→ get_available_months()",
+            f"→ navigate_to_month(month=\"{target_month}\")",
+            f"→ get_cycle_snapshot(month=\"{target_month}\")",
+            "",
+            f"已切换到{label}。当月判断：{headline}。",
+        ]
+    )
+    return {
+        "month": target_month,
+        "mode": "mock",
+        "model": None,
+        "content": content,
+        "sections": _extract_sections(content),
+        "navigate_month": target_month,
+    }
+
+
+def _parse_data_view_month(question: str | None) -> str | None:
+    if not question:
+        return None
+    text = question.strip()
+    if re.search(r"(分析|解读|判断|风险|为什么|怎么看|如何)", text):
+        return None
+    has_view_intent = bool(re.search(r"(看|查看|打开|切换|给我|我要|数据)", text))
+    if not has_view_intent:
+        return None
+    if "最新" in text:
+        return "latest"
+
+    year_month_match = re.search(r"(?P<year>\d{2,4})\s*年\s*(?P<month>\d{1,2})\s*月", text)
+    if not year_month_match:
+        year_month_match = re.search(r"(?P<year>\d{2,4})[-/.](?P<month>\d{1,2})", text)
+    if not year_month_match:
+        return None
+
+    year = int(year_month_match.group("year"))
+    month = int(year_month_match.group("month"))
+    if year < 100:
+        year += 2000
+    if month < 1 or month > 12:
+        return None
+    return f"{year:04d}-{month:02d}"
+
+
 def _run_deep_agent(
     db: Session,
     month: str,
     question: str | None,
     conversation_id: str,
     selected_context: dict | None,
-) -> tuple[str | None, str | None]:
+) -> tuple[str | None, str | None, str | None]:
     try:
-        from deepagents import create_deep_agent
-        from deepagents.backends.state import StateBackend
-
-        skill_files = _load_skill_files()
-        skill_paths = list({f"/skills/{Path(p).parent.name}/" for p in skill_files})
-        tools, navigate_month_ref = _build_tools(db)
-
-        agent = create_deep_agent(
-            model=_build_model(),
-            tools=tools,
-            skills=skill_paths,
-            system_prompt=_load_system_prompt(),
-            checkpointer=_get_checkpointer(),
-            backend=StateBackend(),
-        )
-
-        user_content_parts = [f"请为 {month} 生成宏观周期状态解读。"]
-        if question:
-            user_content_parts.append(f"用户追问：{question.strip()}")
-        if selected_context:
-            ctx_type = selected_context.get("type", "")
-            ctx_name = selected_context.get("name", "")
-            if ctx_type == "indicator":
-                user_content_parts.append(f"用户关注指标：{ctx_name}")
-            elif ctx_type == "rule":
-                status = "命中" if selected_context.get("matched") else "未命中"
-                user_content_parts.append(f"用户关注规则：{ctx_name}（{status}）")
+        agent, skill_files, navigate_month_ref = _create_agent_runtime(db)
 
         result = agent.invoke(
             {
-                "messages": [{"role": "user", "content": " ".join(user_content_parts)}],
+                "messages": [{"role": "user", "content": _build_user_content(month, question, selected_context)}],
                 "files": skill_files,
             },
             config={"configurable": {"thread_id": conversation_id}},
@@ -364,13 +451,79 @@ def _run_deep_agent(
 
         messages = result.get("messages", []) if isinstance(result, dict) else []
         if not messages:
-            return None, None
+            return None, None, None
         last = messages[-1]
         content = getattr(last, "content", None) or (last.get("content") if isinstance(last, dict) else None)
         navigate_month = navigate_month_ref[-1] if navigate_month_ref else None
-        return content, navigate_month
+        return content, navigate_month, None
     except Exception as exc:
-        return f"模型调用失败，已返回错误信息供排查：{exc}", None
+        return None, None, str(exc)
+
+
+def stream_deep_agent_deltas(
+    db: Session,
+    month: str,
+    question: str | None,
+    conversation_id: str,
+    selected_context: dict | None,
+):
+    agent, skill_files, navigate_month_ref = _create_agent_runtime(db)
+    stream_input = {
+        "messages": [{"role": "user", "content": _build_user_content(month, question, selected_context)}],
+        "files": skill_files,
+    }
+    config = {"configurable": {"thread_id": conversation_id}}
+    for item in agent.stream(stream_input, config=config, stream_mode="messages"):
+        message = item[0] if isinstance(item, tuple) else item
+        message_class = type(message).__name__
+        message_type = getattr(message, "type", "")
+        if "AIMessage" not in message_class and message_type not in {"ai", "ai_chunk"}:
+            continue
+        content = getattr(message, "content", None)
+        if isinstance(content, str) and content:
+            yield {"type": "delta", "text": content}
+        elif isinstance(content, list):
+            text_parts = []
+            for part in content:
+                if isinstance(part, dict) and part.get("type") in {"text", "output_text"}:
+                    text_parts.append(str(part.get("text", "")))
+            if text_parts:
+                yield {"type": "delta", "text": "".join(text_parts)}
+    if navigate_month_ref:
+        yield {"type": "action", "action": {"type": "navigate_month", "month": navigate_month_ref[-1]}}
+
+
+def _create_agent_runtime(db: Session):
+    from deepagents import create_deep_agent
+    from deepagents.backends.state import StateBackend
+
+    skill_files = _load_skill_files()
+    skill_paths = list({f"/skills/{Path(p).parent.name}/" for p in skill_files})
+    tools, navigate_month_ref = _build_tools(db)
+    agent = create_deep_agent(
+        model=_build_model(),
+        tools=tools,
+        skills=skill_paths,
+        system_prompt=_load_system_prompt(),
+        checkpointer=_get_checkpointer(),
+        backend=StateBackend(),
+    )
+    return agent, skill_files, navigate_month_ref
+
+
+def _build_user_content(month: str, question: str | None, selected_context: dict | None) -> str:
+    user_content_parts = [f"当前右侧仪表盘月份：{month}。"]
+    if question:
+        user_content_parts.append(f"用户请求：{question.strip()}")
+    else:
+        user_content_parts.append(f"用户请求：请为 {month} 生成宏观周期状态解读。")
+    if selected_context:
+        context_json = json.dumps(selected_context, ensure_ascii=False, default=str)
+        user_content_parts.append(
+            "用户从右侧内容区选中的上下文如下；如果包含 code 或 rule_id，"
+            f"优先用它定位工具参数：{context_json}"
+        )
+    return " ".join(user_content_parts)
 
 
 def _render_mock(db: Session, month: str, question: str | None) -> str:

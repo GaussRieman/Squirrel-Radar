@@ -32,10 +32,10 @@ def test_rules_use_supported_condition_fields():
 def test_agent_prompt_contains_required_sections():
     prompt = load_agent_interpretation_prompt()
     for section in [
-        "可用工具",
-        "推理原则",
-        "Safety Constraints",
-        "Quality Checklist",
-        "先取数，再推理",
+        "SquirrelRadar",
+        "Agent Operating Manual",
+        "Intent Judgment",
+        "Progressive Skill Loading",
+        "Self-Check Before Responding",
     ]:
         assert section in prompt

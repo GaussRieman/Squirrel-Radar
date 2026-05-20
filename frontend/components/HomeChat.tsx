@@ -2,11 +2,11 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import type { AgentInterpretation } from "@/lib/api";
 
 type ChatMessage = {
   role: "user" | "assistant";
   content: string;
+  status?: string;
 };
 
 type HomeChatProps = {
@@ -59,11 +59,15 @@ export function HomeChat({ month }: HomeChatProps) {
 
     setInput("");
     setLoading(true);
-    const nextMessages: ChatMessage[] = [...messages, { role: "user", content: question }];
+    const nextMessages: ChatMessage[] = [
+      ...messages,
+      { role: "user", content: question },
+      { role: "assistant", content: "", status: "理解请求" },
+    ];
     setMessages(nextMessages);
 
     try {
-      const response = await fetch(`${getApiBaseUrl()}/api/agent/interpretation`, {
+      const response = await fetch(`${getApiBaseUrl()}/api/agent/stream`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -75,18 +79,70 @@ export function HomeChat({ month }: HomeChatProps) {
         }),
       });
       if (!response.ok) throw new Error("Agent request failed");
-      const data = (await response.json()) as AgentInterpretation;
-      setMessages((items) => [...items, { role: "assistant", content: data.content }]);
-      if (data.navigate_month) {
-        window.dispatchEvent(
-          new CustomEvent("agent-navigate-month", { detail: { month: data.navigate_month } })
+      if (!response.body) throw new Error("Agent stream unavailable");
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      function appendAssistant(text: string) {
+        setMessages((items) =>
+          items.map((item, index) =>
+            index === items.length - 1 && item.role === "assistant"
+              ? { ...item, content: item.content + text, status: undefined }
+              : item,
+          ),
         );
       }
+
+      function updateAssistantStatus(status: string) {
+        setMessages((items) =>
+          items.map((item, index) =>
+            index === items.length - 1 && item.role === "assistant" && !item.content
+              ? { ...item, status }
+              : item,
+          ),
+        );
+      }
+
+      function handleBlock(block: string) {
+        const lines = block.split("\n");
+        const eventLine = lines.find((line) => line.startsWith("event:"));
+        const dataLine = lines.find((line) => line.startsWith("data:"));
+        if (!eventLine || !dataLine) return;
+        const event = eventLine.slice("event:".length).trim();
+        const data = JSON.parse(dataLine.slice("data:".length).trim()) as Record<string, unknown>;
+        if (event === "delta" && typeof data.text === "string") {
+          appendAssistant(data.text);
+        }
+        if (event === "status" && typeof data.label === "string") {
+          updateAssistantStatus(data.label);
+        }
+        if (event === "action" && data.type === "navigate_month" && typeof data.month === "string") {
+          window.dispatchEvent(
+            new CustomEvent("agent-navigate-month", { detail: { month: data.month } })
+          );
+        }
+      }
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const blocks = buffer.split("\n\n");
+        buffer = blocks.pop() || "";
+        for (const block of blocks) handleBlock(block);
+      }
+      buffer += decoder.decode();
+      if (buffer.trim()) handleBlock(buffer);
     } catch {
-      setMessages((items) => [
-        ...items,
-        { role: "assistant", content: "请求失败，请重试。" },
-      ]);
+      setMessages((items) =>
+        items.map((item, index) =>
+          index === items.length - 1 && item.role === "assistant"
+            ? { ...item, content: item.content || "请求失败，请重试。", status: undefined }
+            : item,
+        ),
+      );
     } finally {
       setLoading(false);
       setSelectedContext(null);
@@ -99,6 +155,9 @@ export function HomeChat({ month }: HomeChatProps) {
       submitQuestion(input);
     }
   }
+
+  const lastMessage = messages[messages.length - 1];
+  const showThinking = loading && lastMessage?.role === "assistant" && !lastMessage.content;
 
   return (
     <aside className="chat-pane">
@@ -114,28 +173,28 @@ export function HomeChat({ month }: HomeChatProps) {
           </div>
         ) : null}
 
-        {messages.map((message, index) => (
-          <article className={`chat-message ${message.role}`} key={`${message.role}-${index}`}>
-            <div className="chat-role-label">
-              {message.role === "user" ? "我" : "Agent"}
-            </div>
-            <div className="chat-content">
-              {message.role === "assistant" ? (
-                <ReactMarkdown>{message.content}</ReactMarkdown>
-              ) : (
-                message.content
-              )}
-            </div>
-          </article>
-        ))}
+        {messages.map((message, index) =>
+          message.role === "assistant" && !message.content ? null : (
+            <article className={`chat-message ${message.role}`} key={`${message.role}-${index}`}>
+              <div className="chat-role-label">
+                {message.role === "user" ? "我" : "Agent"}
+              </div>
+              <div className="chat-content">
+                {message.role === "assistant" ? (
+                  <ReactMarkdown>{message.content}</ReactMarkdown>
+                ) : (
+                  message.content
+                )}
+              </div>
+            </article>
+          ),
+        )}
 
-        {loading ? (
+        {showThinking ? (
           <article className="chat-message assistant">
             <div className="chat-role-label">Agent</div>
-            <div className="chat-content chat-thinking">
-              <span />
-              <span />
-              <span />
+            <div className="chat-content">
+              <span className="stream-status">{lastMessage.status || "处理中"}</span>
             </div>
           </article>
         ) : null}

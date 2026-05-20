@@ -1,6 +1,6 @@
 from pathlib import Path
 
-PROMPT_FILE = Path(__file__).resolve().parents[1] / "prompts" / "agent_interpretation_prompt.md"
+PROMPT_FILE = Path(__file__).resolve().parents[1] / "prompts" / "AGENT.md"
 
 
 def load_agent_interpretation_prompt() -> str:

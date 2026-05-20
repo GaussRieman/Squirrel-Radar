@@ -1,6 +1,6 @@
 ---
 name: navigate-month
-description: Switch the right-side data panel to a specific month. Use this skill when the user says "查看X月", "切换到X月", "show me [month]", "看一下X月数据", or any phrase whose primary intent is to view a different month's data. Do NOT use this skill when the user asks a question about the content of a month's data — use cycle-summary or data-explain instead.
+description: Switch the right-side data panel to a specific month or the latest available month. Use this skill when the user says "查看X月", "切换到X月", "show me [month]", "看一下X月数据", "我要看最新的数据", or any phrase whose primary intent is to view data rather than analyze it. Do NOT use this skill when the user asks a question about the content of a month's data — use cycle-summary or data-explain instead.
 ---
 
 # Month Navigator
@@ -14,6 +14,7 @@ Switches the dashboard's right-side data panel to the requested month by calling
 1. Parse the target month from the user's message into YYYY-MM format:
    - "2025年3月" → "2025-03"
    - "去年3月" → resolve relative to the current month shown in the dashboard
+   - "最新" / "最新数据" → call `get_available_months()` and use the first month returned
    - If the month is ambiguous or unresolvable, call `get_available_months()` first and ask the user to confirm
 2. Call `→ navigate_to_month(month="YYYY-MM")`
 3. If the tool returns an error (month not in database), call `→ get_available_months()` and tell the user which months are available

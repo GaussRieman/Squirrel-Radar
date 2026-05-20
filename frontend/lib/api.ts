@@ -91,6 +91,7 @@ export type AgentInterpretation = {
   month: string;
   mode: string;
   model?: string | null;
+  tools?: string[];
   sections: Array<{ title: string; body: string }>;
   content: string;
   navigate_month?: string | null;

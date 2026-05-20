@@ -1,9 +1,11 @@
 import csv
+import json
 import re
+import time
 from io import StringIO
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import PlainTextResponse, StreamingResponse
 from sqlalchemy import desc, select
 from sqlalchemy.orm import Session, joinedload
 
@@ -20,7 +22,12 @@ from app.schemas.domain import (
     IndicatorDefinitionRead,
     RuleResultRead,
 )
-from app.services.agent_service import generate_interpretation, get_agent_status
+from app.services.agent_service import (
+    build_data_view_response,
+    generate_interpretation,
+    get_agent_status,
+    stream_deep_agent_deltas,
+)
 from app.services.rule_engine import evaluate_month, load_rule_catalog
 from app.services.test_data_service import apply_test_scenario, load_test_scenarios
 
@@ -258,6 +265,133 @@ def create_agent_interpretation(
         question=payload.question,
         conversation_id=payload.conversation_id,
         selected_context=payload.selected_context,
+    )
+
+
+@router.post("/agent/stream")
+def stream_agent_interpretation(
+    payload: AgentInterpretationRequest,
+    db: Session = Depends(get_db),
+):
+    def sse(event: str, data: dict) -> str:
+        return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
+
+    def content_chunks(content: str, chunk_size: int = 80):
+        for line in content.splitlines(keepends=True):
+            stripped = line.lstrip()
+            is_markdown_control = (
+                stripped.startswith("→")
+                or stripped.startswith("#")
+                or stripped.startswith("- ")
+                or bool(re.match(r"\d+\.\s", stripped))
+            )
+            if is_markdown_control or len(line) <= chunk_size:
+                yield line
+                continue
+            for start in range(0, len(line), chunk_size):
+                yield line[start : start + chunk_size]
+
+    def stable_markdown_chunks(buffer: str, force: bool = False) -> tuple[list[str], str]:
+        chunks: list[str] = []
+        while "\n" in buffer:
+            index = buffer.find("\n") + 1
+            chunks.append(buffer[:index])
+            buffer = buffer[index:]
+        if force and buffer:
+            chunks.append(buffer)
+            return chunks, ""
+        if len(buffer) >= 72 and re.search(r"[。！？；.!?]\s*$", buffer):
+            chunks.append(buffer)
+            return chunks, ""
+        return chunks, buffer
+
+    def event_stream():
+        yield sse("status", {"label": "理解请求"})
+        data_view_result = build_data_view_response(db, payload.question)
+        if data_view_result:
+            result = data_view_result
+            yield sse("status", {"label": "切换右侧数据区"})
+            for chunk in content_chunks(result["content"]):
+                yield sse("delta", {"text": chunk})
+                time.sleep(0.16)
+            if result.get("navigate_month"):
+                yield sse("action", {"type": "navigate_month", "month": result["navigate_month"]})
+            yield sse(
+                "done",
+                {
+                    "month": result.get("month"),
+                    "mode": result.get("mode"),
+                    "model": result.get("model"),
+                },
+            )
+        else:
+            yield sse("status", {"label": "读取数据与执行工具"})
+            streamed = False
+            if payload.use_model:
+                try:
+                    pending_text = ""
+                    for event in stream_deep_agent_deltas(
+                        db,
+                        payload.month or "",
+                        payload.question,
+                        payload.conversation_id,
+                        payload.selected_context,
+                    ):
+                        streamed = True
+                        if event["type"] == "delta":
+                            pending_text += event["text"]
+                            chunks, pending_text = stable_markdown_chunks(pending_text)
+                            for chunk in chunks:
+                                yield sse("delta", {"text": chunk})
+                        elif event["type"] == "action":
+                            chunks, pending_text = stable_markdown_chunks(pending_text, force=True)
+                            for chunk in chunks:
+                                yield sse("delta", {"text": chunk})
+                            yield sse("action", event["action"])
+                    chunks, pending_text = stable_markdown_chunks(pending_text, force=True)
+                    for chunk in chunks:
+                        yield sse("delta", {"text": chunk})
+                    yield sse(
+                        "done",
+                        {
+                            "month": payload.month,
+                            "mode": "deepagent",
+                            "model": get_agent_status().get("model"),
+                        },
+                    )
+                    return
+                except Exception as exc:
+                    yield sse("status", {"label": "模型流式调用失败，回退本地解读"})
+                    if streamed:
+                        yield sse("delta", {"text": f"\n\n模型流式调用中断：{exc}"})
+                        yield sse("done", {"month": payload.month, "mode": "error", "model": None})
+                        return
+
+            result = generate_interpretation(
+                db,
+                payload.month,
+                use_model=False,
+                question=payload.question,
+                conversation_id=payload.conversation_id,
+                selected_context=payload.selected_context,
+            )
+            for chunk in content_chunks(result["content"]):
+                yield sse("delta", {"text": chunk})
+            if result.get("navigate_month"):
+                yield sse("action", {"type": "navigate_month", "month": result["navigate_month"]})
+            yield sse(
+                "done",
+                {
+                    "month": result.get("month"),
+                    "mode": result.get("mode"),
+                    "model": result.get("model"),
+                },
+            )
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
 
 
