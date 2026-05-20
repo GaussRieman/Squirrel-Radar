@@ -1,5 +1,17 @@
 from pathlib import Path
 
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+from app.core.database import Base
+
+
+def make_session():
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(engine)
+    testing_session = sessionmaker(bind=engine)
+    return testing_session()
+
 
 def test_load_system_prompt_returns_agent_md_content():
     from app.services.agent_service import _load_system_prompt
@@ -37,3 +49,17 @@ def test_parse_data_view_month_skips_analysis_requests():
 
     assert _parse_data_view_month("分析一下25年3月的数据") is None
     assert _parse_data_view_month("怎么看2025年3月风险") is None
+
+
+def test_data_view_response_uses_task_list_format():
+    from app.services.agent_service import build_data_view_response
+    from app.services.seed import seed_database
+
+    db = make_session()
+    seed_database(db)
+    result = build_data_view_response(db, "查看26年3月的")
+
+    assert result is not None
+    assert result["navigate_month"] == "2026-03"
+    assert "- [x] 检查可用月份" in result["content"]
+    assert "→" not in result["content"]

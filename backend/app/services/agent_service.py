@@ -367,8 +367,8 @@ def build_data_view_response(db: Session, question: str | None) -> dict | None:
     if target_month not in available_months:
         content = "\n".join(
             [
-                "→ get_available_months()",
-                f"→ navigate_to_month(month=\"{target_month}\")",
+                "- [x] 检查可用月份",
+                f"- [ ] 切换到 {target_month}",
                 "",
                 f"未找到 {target_month} 的数据。可选范围：{available_months[-1]} 至 {available_months[0]}。",
             ]
@@ -387,11 +387,11 @@ def build_data_view_response(db: Session, question: str | None) -> dict | None:
     headline = snapshot.headline if snapshot else "当前数据不足以形成完整周期判断"
     content = "\n".join(
         [
-            "→ get_available_months()",
-            f"→ navigate_to_month(month=\"{target_month}\")",
-            f"→ get_cycle_snapshot(month=\"{target_month}\")",
+            "- [x] 检查可用月份",
+            f"- [x] 切换右侧数据区到 {target_month}",
+            "- [x] 读取当月状态摘要",
             "",
-            f"已切换到{label}。当月判断：{headline}。",
+            f"已切换到 {label}。当月判断：{headline}。",
         ]
     )
     return {
