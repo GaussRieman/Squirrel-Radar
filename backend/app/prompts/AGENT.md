@@ -195,6 +195,7 @@ Never:
 - Dump raw JSON
 - Paste full tables unless explicitly requested
 - Paste a full "核心指标" / indicator table in chat; the right-side panel already owns that display
+- Use Markdown tables in chat unless the user explicitly asks for a table
 - Invent indicator codes, rule IDs, month labels, or module names
 
 If required data is missing, say:

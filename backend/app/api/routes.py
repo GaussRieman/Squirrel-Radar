@@ -26,6 +26,8 @@ from app.services.agent_service import (
     build_data_view_response,
     generate_interpretation,
     get_agent_status,
+    should_use_direct_stream,
+    stream_direct_agent_deltas,
     stream_deep_agent_deltas,
 )
 from app.services.rule_engine import evaluate_month, load_rule_catalog
@@ -291,20 +293,6 @@ def stream_agent_interpretation(
             for start in range(0, len(line), chunk_size):
                 yield line[start : start + chunk_size]
 
-    def stable_markdown_chunks(buffer: str, force: bool = False) -> tuple[list[str], str]:
-        chunks: list[str] = []
-        while "\n" in buffer:
-            index = buffer.find("\n") + 1
-            chunks.append(buffer[:index])
-            buffer = buffer[index:]
-        if force and buffer:
-            chunks.append(buffer)
-            return chunks, ""
-        if len(buffer) >= 72 and re.search(r"[。！？；.!?]\s*$", buffer):
-            chunks.append(buffer)
-            return chunks, ""
-        return chunks, buffer
-
     def event_stream():
         yield sse("status", {"label": "理解请求"})
         data_view_result = build_data_view_response(db, payload.question)
@@ -329,28 +317,28 @@ def stream_agent_interpretation(
             streamed = False
             if payload.use_model:
                 try:
-                    pending_text = ""
-                    for event in stream_deep_agent_deltas(
-                        db,
-                        payload.month or "",
-                        payload.question,
-                        payload.conversation_id,
-                        payload.selected_context,
-                    ):
+                    stream_events = (
+                        stream_direct_agent_deltas(
+                            db,
+                            payload.month or "",
+                            payload.question,
+                            payload.selected_context,
+                        )
+                        if should_use_direct_stream()
+                        else stream_deep_agent_deltas(
+                            db,
+                            payload.month or "",
+                            payload.question,
+                            payload.conversation_id,
+                            payload.selected_context,
+                        )
+                    )
+                    for event in stream_events:
                         streamed = True
                         if event["type"] == "delta":
-                            pending_text += event["text"]
-                            chunks, pending_text = stable_markdown_chunks(pending_text)
-                            for chunk in chunks:
-                                yield sse("delta", {"text": chunk})
+                            yield sse("delta", {"text": event["text"]})
                         elif event["type"] == "action":
-                            chunks, pending_text = stable_markdown_chunks(pending_text, force=True)
-                            for chunk in chunks:
-                                yield sse("delta", {"text": chunk})
                             yield sse("action", event["action"])
-                    chunks, pending_text = stable_markdown_chunks(pending_text, force=True)
-                    for chunk in chunks:
-                        yield sse("delta", {"text": chunk})
                     yield sse(
                         "done",
                         {
@@ -361,7 +349,7 @@ def stream_agent_interpretation(
                     )
                     return
                 except Exception as exc:
-                    yield sse("status", {"label": "模型流式调用失败，回退本地解读"})
+                    yield sse("status", {"label": f"模型流式调用失败：{exc}"})
                     if streamed:
                         yield sse("delta", {"text": f"\n\n模型流式调用中断：{exc}"})
                         yield sse("done", {"month": payload.month, "mode": "error", "model": None})

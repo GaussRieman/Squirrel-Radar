@@ -16,6 +16,7 @@
   --chat-line: #26364f;
   --chat-text: #e5eefb;
   --chat-muted: #94a8c4;
+  --mono: "SFMono-Regular", "Roboto Mono", "Fira Code", Consolas, monospace;
   --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
   --shadow-md: 0 12px 32px rgba(15, 23, 42, 0.08);
 }
@@ -30,6 +31,23 @@ body {
   background:
     linear-gradient(180deg, #f7f9fc 0%, var(--bg) 56%, #e8edf5 100%);
   font-family: Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+select,
+textarea,
+input {
+  font-family: inherit;
+}
+
+button:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+input:focus-visible,
+.context-link:focus-visible {
+  outline: 2px solid rgba(37, 99, 235, 0.72);
+  outline-offset: 2px;
 }
 
 main {
@@ -104,6 +122,18 @@ h2 {
   font: inherit;
   font-size: 13px;
   padding: 0 8px;
+  cursor: pointer;
+  transition: border-color 0.16s, box-shadow 0.16s;
+}
+
+.month-select:hover {
+  border-color: #9db0ca;
+}
+
+.month-select:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  outline: none;
 }
 
 .month-badge span {
@@ -229,6 +259,7 @@ details p {
   border-radius: 999px;
   font-size: 12px;
   border: 1px solid var(--line);
+  font-variant-numeric: tabular-nums;
 }
 
 .status.strong {
@@ -531,10 +562,13 @@ details p {
 
 .chat-header-month {
   font-size: 12px;
-  color: #9fb0cc;
-  border: 1px solid #33415d;
+  color: #c8d6ea;
+  border: 1px solid rgba(148, 168, 196, 0.24);
   border-radius: 5px;
-  padding: 3px 7px;
+  padding: 4px 8px;
+  background: rgba(23, 35, 55, 0.72);
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
 }
 
 .chat-empty {
@@ -608,6 +642,11 @@ details p {
   font-size: 13px;
   line-height: 1.7;
   box-shadow: 0 8px 20px rgba(2, 6, 23, 0.12);
+}
+
+.chat-content p,
+.chat-content li {
+  overflow-wrap: anywhere;
 }
 
 .chat-message.user .chat-content {
@@ -1001,6 +1040,17 @@ details p {
   color: #64748b;
 }
 
+.compact-table tbody td:nth-child(n + 4) {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.compact-table tbody td:first-child strong {
+  color: #111827;
+}
+
 .compact-table td:first-child {
   min-width: 150px;
 }
@@ -1021,6 +1071,10 @@ details p {
 .context-link:hover {
   color: var(--blue);
   background: rgba(37, 99, 235, 0.06);
+}
+
+.context-link:active {
+  color: #1d4ed8;
 }
 
 .display-bottom {
@@ -1067,6 +1121,11 @@ details p {
   line-height: 1.45;
 }
 
+.rule-title .context-link {
+  padding: 1px 2px;
+  margin: -1px -2px;
+}
+
 .tag {
   display: inline-flex;
   align-items: center;
@@ -1088,6 +1147,8 @@ details p {
 .rule-risk {
   border-left: 3px solid #f59e0b;
   padding-left: 8px;
+  background: rgba(245, 158, 11, 0.06);
+  border-radius: 0 6px 6px 0;
 }
 
 .status {

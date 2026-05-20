@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 type ChatMessage = {
   role: "user" | "assistant";
@@ -163,6 +164,7 @@ export function HomeChat({ month }: HomeChatProps) {
     <aside className="chat-pane">
       <header className="chat-header">
         <span className="chat-header-title">宏观周期 Agent</span>
+        <span className="chat-header-month">{month}</span>
       </header>
 
       <div className="chat-messages">
@@ -181,7 +183,7 @@ export function HomeChat({ month }: HomeChatProps) {
               </div>
               <div className="chat-content">
                 {message.role === "assistant" ? (
-                  <ReactMarkdown>{message.content}</ReactMarkdown>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
                 ) : (
                   message.content
                 )}

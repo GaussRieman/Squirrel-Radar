@@ -5,6 +5,7 @@ import sqlite3 as _sqlite3
 from pathlib import Path
 
 from deepagents.backends.state import create_file_data
+from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.sqlite import SqliteSaver
 from sqlalchemy import desc, select
@@ -43,11 +44,14 @@ def _build_model() -> ChatOpenAI:
     api_key = settings.openai_api_key or os.getenv("OPENAI_API_KEY", "")
     base_url = settings.openai_base_url or os.getenv("OPENAI_BASE_URL")
     model_name = settings.agent_model.removeprefix("openai:")
+    extra_body = {"enable_thinking": False}
     return ChatOpenAI(
         model=model_name,
         api_key=api_key,
         base_url=base_url,
         temperature=0.2,
+        streaming=True,
+        extra_body=extra_body,
     )
 
 
@@ -491,6 +495,116 @@ def stream_deep_agent_deltas(
                 yield {"type": "delta", "text": "".join(text_parts)}
     if navigate_month_ref:
         yield {"type": "action", "action": {"type": "navigate_month", "month": navigate_month_ref[-1]}}
+
+
+def should_use_direct_stream() -> bool:
+    return "deepseek" in settings.agent_model.lower()
+
+
+def stream_direct_agent_deltas(
+    db: Session,
+    month: str,
+    question: str | None,
+    selected_context: dict | None,
+):
+    target_month = month or db.scalar(select(IndicatorData.month).order_by(desc(IndicatorData.month)))
+    if not target_month:
+        yield {"type": "delta", "text": "当前没有可用数据，无法判断。"}
+        return
+
+    evaluate_month(db, target_month)
+    snapshot = db.scalar(select(CycleSnapshot).where(CycleSnapshot.month == target_month))
+    matched_rules = db.scalars(
+        select(RuleResult).where(RuleResult.month == target_month, RuleResult.matched.is_(True))
+    ).all()
+    indicator_detail = _resolve_indicator_context(db, target_month, question, selected_context)
+    context = {
+        "month": target_month,
+        "snapshot": {
+            "headline": snapshot.headline if snapshot else None,
+            "summary": snapshot.summary if snapshot else None,
+            "modules": snapshot.modules if snapshot else {},
+            "risks": snapshot.risks if snapshot else [],
+            "watch_tasks": snapshot.watch_tasks if snapshot else [],
+        },
+        "matched_rules": [
+            {
+                "rule_id": rule.rule_id,
+                "name": rule.name,
+                "module": rule.module,
+                "severity": rule.severity,
+                "risk": rule.evidence.get("risk"),
+                "evidence_text": rule.evidence.get("evidence_text"),
+            }
+            for rule in matched_rules
+        ],
+        "selected_indicator": indicator_detail,
+        "selected_context": selected_context,
+    }
+    system = SystemMessage(
+        content=(
+            "你是 SquirrelRadar Agent。只基于用户给定上下文回答。"
+            "不要输出 Markdown 表格，不要输出完整核心指标清单。"
+            "用简洁中文、短段落和项目符号回答。"
+            "如果解释单个指标，先说明它对本月周期判断的影响，再给关键依据。"
+        )
+    )
+    human = HumanMessage(
+        content=(
+            f"用户请求：{question or '解释当前月份状态'}\n\n"
+            f"数据上下文：{json.dumps(context, ensure_ascii=False, default=str)}"
+        )
+    )
+    for chunk in _build_model().stream([system, human]):
+        content = getattr(chunk, "content", None)
+        if isinstance(content, str) and content:
+            yield {"type": "delta", "text": content}
+        elif isinstance(content, list):
+            text = "".join(
+                str(part.get("text", ""))
+                for part in content
+                if isinstance(part, dict) and part.get("type") in {"text", "output_text"}
+            )
+            if text:
+                yield {"type": "delta", "text": text}
+
+
+def _resolve_indicator_context(
+    db: Session,
+    month: str,
+    question: str | None,
+    selected_context: dict | None,
+) -> dict | None:
+    code = selected_context.get("code") if selected_context else None
+    indicators = db.scalars(select(IndicatorDefinition).order_by(IndicatorDefinition.importance.desc())).all()
+    if not code and question:
+        for indicator in indicators:
+            if indicator.code in question or indicator.name in question:
+                code = indicator.code
+                break
+    if not code:
+        return None
+    defn = db.scalar(select(IndicatorDefinition).where(IndicatorDefinition.code == code))
+    if not defn:
+        return None
+    data = db.scalar(
+        select(IndicatorData).where(IndicatorData.indicator_id == defn.id, IndicatorData.month == month)
+    )
+    return {
+        "code": defn.code,
+        "name": defn.name,
+        "category": defn.category,
+        "unit": defn.unit,
+        "definition": defn.definition,
+        "interpretation": defn.interpretation,
+        "risk_note": defn.risk_note,
+        "value": data.value if data else None,
+        "yoy": data.yoy if data else None,
+        "mom": data.mom if data else None,
+        "trend_3m": data.trend_3m if data else None,
+        "percentile_24m": data.percentile_24m if data else None,
+        "status": data.status if data else None,
+    }
 
 
 def _create_agent_runtime(db: Session):

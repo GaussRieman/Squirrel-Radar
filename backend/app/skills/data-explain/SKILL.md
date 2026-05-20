@@ -26,6 +26,8 @@ Answers "what does this number mean?" — pulls the indicator's definition, inte
 
 ## Output contract
 
+Do not use Markdown tables. Use compact lines and short bullets so the answer streams cleanly.
+
 ```
 **<indicator name>**（`<code>`）
 
