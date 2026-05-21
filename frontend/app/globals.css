@@ -193,6 +193,17 @@ h2 {
   line-height: 1.55;
 }
 
+.source-link {
+  color: #2563eb;
+  font-weight: 650;
+  text-decoration: none;
+  text-underline-offset: 3px;
+}
+
+.source-link:hover {
+  text-decoration: underline;
+}
+
 .module-signals {
   display: flex;
   flex-wrap: wrap;

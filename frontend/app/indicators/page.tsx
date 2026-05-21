@@ -22,7 +22,14 @@ export default async function IndicatorsPage() {
               <div>
                 <h2>{indicator.name}</h2>
                 <p className="small">
-                  {indicator.category} · {indicator.frequency} · {indicator.source}
+                  {indicator.category} · {indicator.frequency} ·{" "}
+                  {indicator.source_url ? (
+                    <a className="source-link" href={indicator.source_url} target="_blank" rel="noreferrer">
+                      {indicator.source}
+                    </a>
+                  ) : (
+                    indicator.source
+                  )}
                 </p>
               </div>
               <span className="status neutral">重要性 {indicator.importance}</span>

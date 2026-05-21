@@ -1,8 +1,6 @@
-import csv
 import json
 import re
 import time
-from io import StringIO
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import PlainTextResponse, StreamingResponse
@@ -16,12 +14,18 @@ from app.schemas.domain import (
     AgentInterpretationRead,
     CycleSnapshotRead,
     DashboardRead,
+    DataSyncLocalCsvRequest,
+    DataSyncResultRead,
     IndicatorDataCreate,
     IndicatorDataRead,
     IndicatorDefinitionCreate,
     IndicatorDefinitionRead,
     RuleResultRead,
 )
+from app.services.data_sync.csv_file import load_csv_content, load_csv_rows
+from app.services.data_sync.models import DataSyncError
+from app.services.data_sync.official_latest import load_official_latest_rows
+from app.services.data_sync.service import prune_months_after, sync_indicator_rows
 from app.services.agent_service import (
     build_data_view_response,
     generate_interpretation,
@@ -104,69 +108,33 @@ def csv_template():
     )
 
 
-@router.post("/indicator-data/import-csv")
+@router.post("/indicator-data/import-csv", response_model=DataSyncResultRead)
 async def import_csv(file: UploadFile = File(...), db: Session = Depends(get_db)):
     content = (await file.read()).decode("utf-8-sig")
-    reader = csv.DictReader(StringIO(content))
-    required_headers = {
-        "indicator_code",
-        "month",
-        "value",
-        "yoy",
-        "mom",
-        "trend_3m",
-        "percentile_24m",
-        "status",
-    }
-    if not reader.fieldnames or not required_headers.issubset(set(reader.fieldnames)):
-        raise HTTPException(status_code=400, detail="CSV headers are invalid")
-    code_to_id = {row.code: row.id for row in db.scalars(select(IndicatorDefinition)).all()}
-    parsed_rows = []
-    errors = []
-    for line_number, item in enumerate(reader, start=2):
-        indicator_id = code_to_id.get(item.get("indicator_code", ""))
-        if not indicator_id:
-            errors.append(f"line {line_number}: indicator_code does not exist")
-            continue
-        try:
-            _validate_month(item.get("month", ""))
-            parsed_rows.append(
-                {
-                    "indicator_id": indicator_id,
-                    "month": item["month"],
-                    "value": _required_float(item.get("value")),
-                    "yoy": _float_or_none(item.get("yoy")),
-                    "mom": _float_or_none(item.get("mom")),
-                    "trend_3m": _float_or_none(item.get("trend_3m")),
-                    "percentile_24m": _float_or_none(item.get("percentile_24m")),
-                    "status": item.get("status") or "neutral",
-                }
-            )
-        except ValueError as exc:
-            errors.append(f"line {line_number}: {exc}")
-    if errors:
-        raise HTTPException(status_code=400, detail=errors)
+    try:
+        result = sync_indicator_rows(db, load_csv_content(content, file.filename or "uploaded csv"))
+    except DataSyncError as exc:
+        raise HTTPException(status_code=400, detail=exc.errors) from exc
+    return result
 
-    imported = 0
-    touched_months = set()
-    for item in parsed_rows:
-        row = db.scalar(
-            select(IndicatorData).where(
-                IndicatorData.indicator_id == item["indicator_id"],
-                IndicatorData.month == item["month"],
-            )
-        )
-        if row:
-            for key, value in item.items():
-                setattr(row, key, value)
-        else:
-            db.add(IndicatorData(**item))
-        imported += 1
-        touched_months.add(item["month"])
-    db.commit()
-    for month in touched_months:
-        evaluate_month(db, month)
-    return {"imported": imported, "months": sorted(touched_months)}
+
+@router.post("/data-sync/official-latest", response_model=DataSyncResultRead)
+def sync_official_latest(prune_newer: bool = True, db: Session = Depends(get_db)):
+    try:
+        result = sync_indicator_rows(db, load_official_latest_rows())
+    except DataSyncError as exc:
+        raise HTTPException(status_code=400, detail=exc.errors) from exc
+    pruned = prune_months_after(db, result.months[-1]) if prune_newer and result.months else 0
+    return {**result.__dict__, "pruned": pruned}
+
+
+@router.post("/data-sync/local-csv", response_model=DataSyncResultRead)
+def sync_local_csv(payload: DataSyncLocalCsvRequest, db: Session = Depends(get_db)):
+    try:
+        result = sync_indicator_rows(db, load_csv_rows(payload.path))
+    except DataSyncError as exc:
+        raise HTTPException(status_code=400, detail=exc.errors) from exc
+    return result
 
 
 @router.get("/rules")

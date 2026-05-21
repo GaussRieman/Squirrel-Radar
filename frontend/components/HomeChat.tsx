@@ -21,7 +21,7 @@ type SelectedContext = Record<string, unknown> & {
 };
 
 function getApiBaseUrl() {
-  return process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+  return process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
 }
 
 export function HomeChat({ month }: HomeChatProps) {

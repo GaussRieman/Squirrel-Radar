@@ -4,6 +4,22 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 
 
+INDICATOR_SOURCE_URLS = {
+    "m2_yoy": "https://www.cnfin.com/yw-lb/detail/20260514/4412666_1.html",
+    "tsf_stock_yoy": "https://www.cnfin.com/yw-lb/detail/20260514/4412666_1.html",
+    "new_rmb_loan": "https://www.nbd.com.cn/articles/2026-05-14/4392761.html",
+    "household_mid_long_loan": "https://www.nbd.com.cn/articles/2026-05-14/4392761.html",
+    "enterprise_mid_long_loan": "https://www.nbd.com.cn/articles/2026-05-14/4392761.html",
+    "core_cpi": "https://www.stats.gov.cn/sj/zxfb/202605/t20260511_1963659.html",
+    "ppi": "https://www.stats.gov.cn/sj/zxfbhjd/202605/t20260511_1963658.html",
+    "secondhand_home_price_mom_70c": "https://www.stats.gov.cn/sj/zxfb/202605/t20260518_1963715.html",
+    "commodity_house_sales_area": "https://www.stats.gov.cn/sj/zxfb/202605/t20260518_1963729.html",
+    "wage_income": "https://www.stats.gov.cn/sj/zxfb/202604/t20260416_1963323.html",
+    "private_investment": "https://www.stats.gov.cn/sj/zxfb/202605/t20260518_1963730.html",
+    "industrial_profit": "https://www.stats.gov.cn/sj/zxfb/202604/t20260427_1963403.html",
+}
+
+
 class IndicatorDefinition(Base):
     __tablename__ = "indicator_definitions"
 
@@ -23,6 +39,10 @@ class IndicatorDefinition(Base):
     data_points: Mapped[list["IndicatorData"]] = relationship(
         back_populates="indicator", cascade="all, delete-orphan"
     )
+
+    @property
+    def source_url(self) -> str | None:
+        return INDICATOR_SOURCE_URLS.get(self.code)
 
 
 class IndicatorData(Base):

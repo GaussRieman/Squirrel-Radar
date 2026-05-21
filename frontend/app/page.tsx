@@ -121,7 +121,21 @@ function HomeInner() {
                         </AgentContextButton>
                       </td>
                       <td>{row.indicator.category}</td>
-                      <td className="small">{row.indicator.source}</td>
+                      <td className="small">
+                        {row.indicator.source_url ? (
+                          <a
+                            className="source-link"
+                            href={row.indicator.source_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            title={`打开${row.indicator.source}原始来源`}
+                          >
+                            {row.indicator.source}
+                          </a>
+                        ) : (
+                          row.indicator.source
+                        )}
+                      </td>
                       <td>{row.value}{row.indicator.unit}</td>
                       <td>{formatNumber(row.yoy)}</td>
                       <td>{formatNumber(row.mom)}</td>

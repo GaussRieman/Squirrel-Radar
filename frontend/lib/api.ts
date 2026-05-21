@@ -5,6 +5,7 @@ export type IndicatorDefinition = {
   category: string;
   frequency: string;
   source: string;
+  source_url?: string | null;
   unit: string;
   importance: number;
   confidence: number;
@@ -139,7 +140,7 @@ export type RuleCatalog = {
 };
 
 function getBaseUrl() {
-  return process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+  return process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
 }
 
 export async function getDashboard(month?: string): Promise<Dashboard> {

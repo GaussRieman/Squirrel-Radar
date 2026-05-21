@@ -7,6 +7,7 @@ class IndicatorDefinitionBase(BaseModel):
     category: str
     frequency: str = "monthly"
     source: str
+    source_url: str | None = None
     unit: str
     importance: int = 3
     confidence: float = 0.8
@@ -98,3 +99,14 @@ class AgentInterpretationRequest(BaseModel):
     question: str | None = None
     conversation_id: str = "default"
     selected_context: dict | None = None
+
+
+class DataSyncLocalCsvRequest(BaseModel):
+    path: str
+
+
+class DataSyncResultRead(BaseModel):
+    imported: int
+    months: list[str]
+    sources: list[str]
+    pruned: int = 0

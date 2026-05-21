@@ -23,7 +23,7 @@
 
 访问：
 
-- http://localhost:3000/agent
+- http://127.0.0.1:3000/agent
 
 可在页面中：
 
@@ -49,9 +49,9 @@ docker compose up --build
 
 打开：
 
-- 前端：http://localhost:3000
-- 后端 API：http://localhost:8000/api/health
-- OpenAPI 文档：http://localhost:8000/docs
+- 前端：http://127.0.0.1:3000
+- 后端 API：http://127.0.0.1:8000/api/health
+- OpenAPI 文档：http://127.0.0.1:8000/docs
 
 后端启动时会自动创建表，并写入 12 个指标定义、24 个月样例数据。访问首页时会自动评估规则并生成当前月份快照。
 
@@ -110,6 +110,28 @@ indicator_code,month,value,yoy,mom,trend_3m,percentile_24m,status
 m2_yoy,2026-05,8.9,8.9,0.1,8.8,72,strong
 ```
 
+本地真实数据同步也可以直接指向一个 CSV 文件或目录：
+
+```bash
+cd backend
+uv run python -m app.services.data_sync.cli ../data/real_macro_data.csv
+```
+
+或通过 API：
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/data-sync/local-csv \
+  -H "Content-Type: application/json" \
+  -d '{"path":"../data/real_macro_data.csv"}'
+```
+
+也可以直接同步当前内置的最新公开官方快照，并清理本地未发布的 seed 月份：
+
+```bash
+cd backend
+uv run python -m app.services.data_sync.cli --official-latest --prune-newer
+```
+
 ## 核心 API
 
 - `GET /api/indicators`：指标定义列表
@@ -117,6 +139,8 @@ m2_yoy,2026-05,8.9,8.9,0.1,8.8,72,strong
 - `GET /api/indicator-data?month=2026-05`：指标数据
 - `POST /api/indicator-data`：手动录入指标数据
 - `POST /api/indicator-data/import-csv`：CSV 导入
+- `POST /api/data-sync/local-csv`：从本地 CSV 文件或目录同步真实数据
+- `POST /api/data-sync/official-latest`：同步最新公开官方快照
 - `GET /api/rules`：查看规则文件内容
 - `POST /api/rules/evaluate/{month}`：评估指定月份规则
 - `GET /api/rule-results?month=2026-05`：规则结果
