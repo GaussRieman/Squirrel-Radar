@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
+import { ArrowUp, Mic, Paperclip, Plus } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -43,6 +44,8 @@ export function HomeChat({ month }: HomeChatProps) {
         setInput(`解释一下 ${detail.name} 对本月周期判断的影响`);
       } else if (detail.type === "rule") {
         setInput(`解释规则"${detail.name}"为什么${detail.matched ? "命中" : "未命中"}`);
+      } else if (detail.type === "module") {
+        setInput(`解释一下${detail.name}模块为什么是"${detail.state}"`);
       }
     }
     window.addEventListener("agent-context-selected", handleContext);
@@ -159,19 +162,28 @@ export function HomeChat({ month }: HomeChatProps) {
 
   const lastMessage = messages[messages.length - 1];
   const showThinking = loading && lastMessage?.role === "assistant" && !lastMessage.content;
+  const quickPrompts = [
+    "解释本月为什么是信用偏弱",
+    "生成一份月度宏观总结",
+    "这对家庭部门意味着什么",
+    "列出下月需要跟踪的证据",
+  ];
 
   return (
-    <aside className="chat-pane">
+    <section className="chat-pane">
       <header className="chat-header">
-        <span className="chat-header-title">宏观周期 Agent</span>
-        <span className="chat-header-month">{month}</span>
+        <div>
+          <span className="chat-header-eyebrow">当前主题</span>
+          <h1 className="chat-header-title">{month} 宏观分析</h1>
+        </div>
+        <span className="chat-header-month">真实快照</span>
       </header>
 
       <div className="chat-messages">
         {messages.length === 0 && !loading ? (
           <div className="chat-empty">
-            <p>你好，我是宏观周期 Agent。</p>
-            <p>可以问我本月的经济状态、规则命中原因、风险点或对家庭企业的含义。</p>
+            <h2>从一个问题开始。</h2>
+            <p>我会结合右侧证据链解释周期判断、规则命中原因，以及它对家庭和企业的含义。</p>
           </div>
         ) : null}
 
@@ -204,6 +216,18 @@ export function HomeChat({ month }: HomeChatProps) {
       </div>
 
       <form className="chat-input" onSubmit={handleSubmit}>
+        <div className="quick-prompts" aria-label="快捷问题">
+          {quickPrompts.map((prompt) => (
+            <button
+              type="button"
+              key={prompt}
+              onClick={() => submitQuestion(prompt)}
+              disabled={loading}
+            >
+              {prompt}
+            </button>
+          ))}
+        </div>
         {selectedContext ? (
           <div className="selected-context">
             <span>上下文：{selectedContext.name || selectedContext.type}</span>
@@ -211,6 +235,12 @@ export function HomeChat({ month }: HomeChatProps) {
           </div>
         ) : null}
         <div className="chat-input-row">
+          <button type="button" className="input-icon-button" aria-label="新建分析">
+            <Plus size={18} />
+          </button>
+          <button type="button" className="input-icon-button" aria-label="上传材料">
+            <Paperclip size={18} />
+          </button>
           <textarea
             aria-label="向 Agent 提问"
             placeholder={`问问 ${month} 的宏观状态…`}
@@ -219,11 +249,14 @@ export function HomeChat({ month }: HomeChatProps) {
             onChange={(event) => setInput(event.target.value)}
             onKeyDown={handleKeyDown}
           />
-          <button type="submit" disabled={loading || !input.trim()} aria-label="发送">
-            ↑
+          <button type="button" className="input-icon-button" aria-label="语音输入">
+            <Mic size={18} />
+          </button>
+          <button className="send-button" type="submit" disabled={loading || !input.trim()} aria-label="发送">
+            <ArrowUp size={18} />
           </button>
         </div>
       </form>
-    </aside>
+    </section>
   );
 }

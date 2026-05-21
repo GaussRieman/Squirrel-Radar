@@ -1,6 +1,6 @@
 # Macro Cycle Radar
 
-宏观周期状态雷达是一个 MVP 数据产品工程，用少量核心宏观指标、文件驱动规则和 Agent 解读占位，生成月度宏观周期状态快照。
+宏观周期状态雷达是一个 AI 宏观分析工作台，用核心宏观指标、文件驱动规则、真实来源链接和 Agent 解读生成月度宏观周期状态快照。
 
 ## 技术栈
 
@@ -9,10 +9,10 @@
 - 数据库：SQLite
 - 规则：`backend/app/seeds/rules.seed.yaml`
 - 指标定义：`backend/app/seeds/indicators.seed.json`
-- Agent 提示词：`backend/app/prompts/agent_interpretation_prompt.md`
-- Agent 工作台：`/agent`
+- Agent 提示词：`backend/app/prompts/AGENT.md`
+- Agent 工作台：首页三栏工作台 + `/agent`
 - 数据输入：手动 API 录入 + CSV 导入接口
-- Agent：预留占位，不接真实模型
+- Agent：DeepAgent runtime，支持工具调用、会话记忆、意图路由和流式输出
 
 ## 项目文档
 
@@ -40,6 +40,16 @@ Macro Cycle Agent 使用 DeepAgent runtime，并提供 4 个工具：
 - `get_matched_rules`
 - `get_cycle_snapshot`
 - `get_rule_execution_logs`
+
+## 首页 AI 工作台
+
+首页采用三栏结构：
+
+- 左侧：资产栏，展示最近生成和专题资产。
+- 中间：Agent 对话区，负责流式回答、解释、报告生成和用户输入。
+- 右侧：周期数据看板，负责持续展示当前周期状态卡片、全部指标归一化趋势图、历史对比表和真实来源链接。
+
+右侧看板只保留不适合塞进聊天气泡里的内容。状态卡片可点击，点击后会把对应解释问题带入 Agent 输入框。
 
 ## 快速启动
 

@@ -144,22 +144,21 @@ Agent 工作台：
 - `GET /api/test-data/scenarios`
 - `POST /api/test-data/scenarios/{scenario_id}/apply`
 
-### 7. 前端首页
+### 7. 前端首页与 AI 工作台
 
-已完成一个可运行的数据产品首页：
+已完成一个可运行的 AI 宏观分析工作台：
 
-- 当前周期状态
-- 六大模块状态卡片
-- 12 个核心指标表
-- 趋势图
-- 规则命中列表
-- Agent 解读占位
-- 风险提示和下月观察任务
+- 左侧资产栏：最近分析和专题资产入口
+- 中间 Agent 对话区：流式输出、Markdown 渲染、工具步骤展示和快捷问题
+- 右侧周期数据看板：当前周期状态卡片、全部指标归一化趋势图、历史对比与来源表
+- 状态卡片可点击并触发 Agent 解释输入
+- Agent 对话不再重复完整指标表，结构化数据保留在右侧看板
 
 核心文件：
 
 - `frontend/app/page.tsx`
-- `frontend/components/TrendChart.tsx`
+- `frontend/components/HomeChat.tsx`
+- `frontend/components/AgentCanvas.tsx`
 - `frontend/lib/api.ts`
 
 ### 8. 环境管理
@@ -183,15 +182,15 @@ docker compose up --build
 
 访问：
 
-- 前端：http://localhost:3000
-- API 文档：http://localhost:8000/docs
-- Agent 工作台：http://localhost:3000/agent
+- 前端：http://127.0.0.1:3000
+- API 文档：http://127.0.0.1:8000/docs
+- Agent 工作台：http://127.0.0.1:3000/agent
 
 ## 已验证
 
 - 后端 Python 代码可编译
 - 后端 app 可导入
-- 前端 `npm run build` 通过
+- 前端 `npm run build` / `npm run typecheck` 通过
 - 指标 seed 文件校验通过
 - 规则 seed 文件校验通过
 - Agent 提示词结构完整
@@ -200,7 +199,7 @@ docker compose up --build
 ## 尚未完成
 
 - 已接入 DeepAgent 调用通道；真实调用需要配置模型密钥
-- 未做真实宏观数据源同步
+- 已接入最新公开官方快照同步；后续可继续扩展更多官方数据适配器
 - 未做用户权限
 - 未做 Alembic 数据库迁移
 - 未做复杂规则编排和回测
